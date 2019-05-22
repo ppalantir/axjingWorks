@@ -4,10 +4,10 @@ import numpy as np
 import re 
 
 
-old_path = '/home/axjing/下载/2019-01-09'
-xlm_path = '/home/axjing/dataVOC/Annotation/'
-jpg_path = '/home/axjing/dataVOC/JPEGImage/'
-dcm_path = '/home/axjing/dataVOC/DicomFiles/'
+old_path = '/home/andy/下载/2019-01-21'
+xlm_path = '/home/andy/dataVOC/Annotation/'
+jpg_path = '/home/andy/dataVOC/JPEGImage/'
+dcm_path = '/home/andy/dataVOC/DicomFiles/'
 
 def name_path_files(file_dir):
     # 文件名及文件路径列表
