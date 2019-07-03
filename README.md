@@ -579,7 +579,9 @@ with tf.Session() as sess:
 2 重新排序数列，所有元素比基准值小的摆放在基准前面，所有元素比基准值大的摆在基准的后面（相同的数可以到任一边）。在这个分区退出之后，该基准就处于数列的中间位置。这个称为分区（partition）操作。
 3 递归地（recursive）把小于基准值元素的子数列和大于基准值元素的子数列排序。
 递归的最底部情形，是数列的大小是零或一，也就是永远都已经被排序好了。虽然一直递归下去，但是这个算法总会退出，因为在每次的迭代（iteration）中，它至少会把一个元素摆到它最后的位置去。
-![sort quick](https://raw.githubusercontent.com/axjing/axjingWorks/master/Reference/sort_quick_anim.gif)
+
+<div align=center><img src="https://raw.githubusercontent.com/axjing/axjingWorks/master/Reference/sort_quick_anim.gif" width = "480" height = "300" /></div>
+
 
 ### 堆排序算法
 堆排序（Heapsort）是指利用堆这种数据结构所设计的一种排序算法。堆积是一个近似完全二叉树的结构，并同时满足堆积的性质：**即子结点的键值或索引总是小于（或者大于）它的父节点。**
@@ -589,7 +591,8 @@ with tf.Session() as sess:
 2 把堆首（最大值）和堆尾互换
 3 把堆的尺寸缩小1，并调用shift_down(0),目的是把新的数组顶端数据调整到相应位置
 4 重复步骤2，直到堆的尺寸为1
-![Heapsort](https://raw.githubusercontent.com/axjing/axjingWorks/master/Reference/heap_sort.gif)
+
+<div align=center><img src="https://raw.githubusercontent.com/axjing/axjingWorks/master/Reference/heap_sort.gif" width = "480" height = "300" /></div>
 
 ### 归并排序
 归并排序（Merge sort，台湾译作：合并排序）是建立在归并操作上的一种有效的排序算法。该算法是采用分治法（Divide and Conquer）的一个非常典型的应用。
@@ -599,7 +602,8 @@ with tf.Session() as sess:
 3. 比较两个指针所指向的元素，选择相对小的元素放入到合并空间，并移动指针到下一位置
 4. 重复步骤3直到某一指针达到序列尾
 5. 将另一序列剩下的所有元素直接复制到合并序列尾
-![Merge sort](https://raw.githubusercontent.com/axjing/axjingWorks/master/Reference/merge_sort.gif)
+
+<div align=center><img src="https://raw.githubusercontent.com/axjing/axjingWorks/master/Reference/merge_sort.gif" width = "480" height = "300" /></div>
 
 ### 二分查找算法
 二分查找算法是一种在有序数组中查找某一特定元素的搜索算法。搜素过程从数组的中间元素开始，如果中间元素正好是要查找的元素，则搜素过程结束；如果某一特定元素大于或者小于中间元素，则在数组大于或小于中间元素的那一半中查找，而且跟开始一样从中间元素开始比较。如果在某一步骤数组为空，则代表找不到。这种搜索算法每一次比较都使搜索范围缩小一半。折半搜索每次把搜索区域减少一半，时间复杂度为Ο(log_n_) 。
@@ -643,7 +647,9 @@ DFS 在访问图中某一起始顶点 v 后，由 v 出发，访问它的任一�
     * 否则将它所有尚未检验过的直接子节点加入队列中。
 3. 若队列为空，表示整张图都检查过了——亦即图中没有欲搜寻的目标。结束搜寻并回传“找不到目标”。
 4. 重复步骤2。
-![BFS](https://raw.githubusercontent.com/axjing/axjingWorks/master/Reference/BFS.gif)
+
+<div align=center><img src="https://raw.githubusercontent.com/axjing/axjingWorks/master/Reference/BFS.gif" width = "480" height = "380" /></div>
+
 
 ### Dijkstra算法
 戴克斯特拉算法（Dijkstra’s algorithm）是由荷兰计算机科学家艾兹赫尔·戴克斯特拉提出。迪科斯彻算法使用了广度优先搜索解决非负权有向图的单源最短路径问题，算法最终得到一个最短路径树。该算法常用于路由算法或者作为其他图算法的一个子模块。
@@ -659,7 +665,8 @@ DFS 在访问图中某一起始顶点 v 后，由 v 出发，访问它的任一�
 对其余T中顶点的距离值进行修改：若加进W作中间顶点，从V0到Vi的距离值缩短，则修改此距离值
 
 重复上述步骤2、3，直到S中包含所有顶点，即W=Vi为止
-![Dijkstra’s algorithm](https://raw.githubusercontent.com/axjing/axjingWorks/master/Reference/Dijkstra.gif)
+
+<div align=center><img src="https://raw.githubusercontent.com/axjing/axjingWorks/master/Reference/Dijkstra.gif" width = "480" height = "380" /></div>
 
 ### 动态规划算法
 动态规划（Dynamic programming）是一种在数学、计算机科学和经济学中使用的，通过把原问题分解为相对简单的子问题的方式求解复杂问题的方法。 动态规划常常适用于有重叠子问题和最优子结构性质的问题，动态规划方法所耗时间往往远少于朴素解法。
