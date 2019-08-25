@@ -7,6 +7,7 @@ plt.figure(figsize=(10,8))
 x = np.linspace(start=-1, stop=2, num=1001, dtype=np.float)
 logi = np.log(1 + np.exp(-x)) / math.log(2)
 boost = np.exp(-x)
+
 y_01 = x < 0
 y_hinge = 1.0 - x
 y_hinge[y_hinge < 0] = 0
