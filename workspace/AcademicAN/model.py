@@ -1,6 +1,14 @@
+'''
+@Description: ResNet + RoI + Mask
+@Author: Xjing An
+@Date: 2019-08-31 20:13:55
+@LastEditTime: 2019-09-25 14:47:06
+@LastEditors: Please set LastEditors
+'''
 """
 Mask R-CNN
 The main Mask R-CNN model implementation.
+劲动脉超声图像中的应用
 
 Copyright (c) 2017 Matterport, Inc.
 Licensed under the MIT License (see LICENSE for details)
