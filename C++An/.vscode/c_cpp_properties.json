@@ -2,11 +2,14 @@
     "configurations": [
         {
             "name": "Win32",
+            "intelliSenseMode":"msvc-x64",
+            "compilerPath":"C:/Program Files (x86)/CodeBlocks/MinGW/bin/gcc.exe",
             "includePath": [
                 "${workspaceFolder}/**",
                 "C:\\Program Files (x86)\\CodeBlocks\\MinGW\\include",
                 "C:/Program Files (x86)/CodeBlocks/MinGW/lib/gcc/mingw32/5.1.0/include/c++",
                 "C:/Program Files (x86)/CodeBlocks/MinGW/lib/gcc/mingw32/5.1.0/include/c++/mingw32"
+                "C:\\Program Files (x86)\\CodeBlocks\\MinGW\\mingw32\\bin"
             ],
             "defines": [
                 "_DEBUG",
