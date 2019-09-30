@@ -2,7 +2,7 @@
  * @Description: 练习cout
  * @Author: Xjing An
  * @Date: 2019-09-24 09:31:54
- * @LastEditTime: 2019-09-29 16:56:01
+ * @LastEditTime: 2019-09-30 11:25:29
  * @LastEditors: Please set LastEditors
  */
 #include <iostream> //将文件中的内容条件到程序中，与python的import类似,/ iosteram(input&out stream)中包含了输入输出语句的函数
@@ -14,10 +14,57 @@
 #include <windows.h> //window控制终端
 using namespace std;
 
+
+
 int main()
 {
+    // exp17指针--------------------------------------
+    /**
+     * 指针是一个值为内存地址的变量（或数据对象）
+     * 
+     * */
+    double num17 = 1024.5;
+    //声明一个指针，指向num17变量
+    double* ptr_num17 = &num17;
+    cout << "ptr_num is Value:" << ptr_num17 << "\t" << &num17 <<  endl;
+    cout << "ptr_num17 指向空间的值：" << *ptr_num17 << endl;
+
+    //exp16 数组--------------------------------------
+    int num16[] = {1, 2, 4, 'c', 231231};
+    cout << num16[2] << endl;
+    // 动态录入信息及赋值
+    const int N1 = 5;
+    int num161[N1];
+
+    for (int i = 0; i < sizeof(num161) / sizeof(int); i++){
+        cout << "请输入第" << (i+1) << endl;
+        cin >> num161[i];
+    }
+    for (int i = 0; i<sizeof(num161) / sizeof(int); i++){
+        cout << num161[i] << endl;
+    }
+
+
+    //exp15-------------------------------------------
+    //break 跳出循环 continue继续下次循环
+
+
+    //exp14-------------------------------------------
+    //for 
+    /**
+     * for(表达式1；表达式2；表达式3){
+          语句；
+    }*/
+    const int N = 20;
+    for (int i=0; i<N; i++){
+        cout << "zaibiekangqiao"<< endl;
+        if (i == 6){
+            break;
+        }
+    }
+
     // exp13------------------------------------------
-    // for
+    // while
     int i = 0;  //循环变量的初始值
     int sum = 0; //用来保存累加和的变量
     while (i <= 100) //循环变量的条件
@@ -147,7 +194,7 @@ int main()
 
     //exp5-----------------------------------------
     // 修改终端标题：安相静WorkSpace
-    SetConsoleTitle("安相静：WorkSpace");
+    //SetConsoleTitle("安相静：WorkSpace");
     /**伤害*/
     double value_attack = 57.88;
     /**伤害成长值*/
@@ -187,6 +234,7 @@ int main()
     cout <<"最近就业形势不好呀\n";
     cout <<"怎么能找到更好的就业\n";
     cout <<"学习C++\n";
+    SetConsoleOutputCP(65001);
     system("pause");
     
     return 0;

@@ -2,7 +2,7 @@
     "configurations": [
         {
             "name": "Win32",
-            "intelliSenseMode":"msvc-x64",
+            "intelliSenseMode":"C:\\Program Files (x86)\\CodeBlocks\\MinGW\\include",
             "compilerPath":"C:/Program Files (x86)/CodeBlocks/MinGW/bin/gcc.exe",
             "includePath": [
                 "${workspaceFolder}/**",

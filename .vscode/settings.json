@@ -1,0 +1,9 @@
+{
+    "python.pythonPath": "C:\\Users\\axjin\\AppData\\Local\\conda\\conda\\envs\\tensorflow-gpu\\python.exe",
+    "python.testing.pytestArgs": [
+        "JingNotebook"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.nosetestsEnabled": false,
+    "python.testing.pytestEnabled": true
+}
