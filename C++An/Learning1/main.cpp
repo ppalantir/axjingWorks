@@ -2,7 +2,7 @@
  * @Description: 练习cout
  * @Author: Xjing An
  * @Date: 2019-09-24 09:31:54
- * @LastEditTime: 2019-10-03 10:09:11
+ * @LastEditTime: 2019-10-06 19:15:20
  * @LastEditors: Please set LastEditors
  */
 #include <iostream> //将文件中的内容条件到程序中，与python的import类似,/ iosteram(input&out stream)中包含了输入输出语句的函数
@@ -12,13 +12,51 @@
 #include <cmath>
 #include <iomanip>
 #include <windows.h> //window控制终端
+#include <string>
+#include <limits>
 using namespace std;
 
 
 
 int main()
 {
+    //exp22 三目运算符,返回的是变量，可以继续赋值
+    //语法： 表达式1 ？ 表达式2 ：表达式3；
+    //如果表达式1为真，执行表达式2，并返回表达式2的结果
+    //如果表达式1为假，执行表达式3，并返回表达式3的结果
+    int a22 = 10;
+    int b22 = 20;
+    int c22 = 0;
+    c22 = (a22>b22 ? a22:b22);
+    (a22>b22 ? a22 : b22) = 100;
+    cout << a22 << endl;
+    cout << b22 << endl;
+    cout << c22 << endl;
+    
+
+    //exp21 bool数据类型
+    bool flag21 = true;
+    cout << flag21 << "bool类型所占用的内存空间：" << sizeof(flag21) << endl;
+    
+    //exp20字符串类型
+    char str20[] = "I Love You!!!";
+    string str201 = "C++：I Love You!!!"; // 包含一个include <string>
+    cout << "C风格字符串：" << str20 << endl;
+    cout << "C+风格字符串：" << str201 << endl;
+    
+    //exp19字符型的创建方法、内存空间、常见错误：只能用单引号，只能是单个字符
+    char ch19 = 'a';
+    cout << "a=" << ch19 << "字符型变量的大小：" << sizeof(ch19) << endl;
+    cout << "ASCII值：" << int(ch19) << endl;
+    
     //exp18 指针数组用例：
+    //单精度vs双精度
+    float f1 = 3.14f;
+    double f2 = -3.13;
+    float f3 = 3e-21;
+    cout << "f1=" << f1 << "字符长度：" << sizeof(f1) << endl;
+    cout << "f2=" << f2 << "字符长度：" << sizeof(f2) << endl;
+    cout << "f3=" << f3 << "字符长度：" << sizeof(f3) << endl;
     double score[] {11, 22, 33, 44, 55};
     double *ptr_score = score;
     
@@ -145,10 +183,27 @@ int main()
     num9 -= 90;
     num9 /= 90;
     num9 *= 90;
-    num9 %= 90;
+    num9 %= 90; //取模、取余
 
     cout << num9 << endl;
 
+    //前置递增运算符，后置递增，前置递减，后置递减
+    int num_8 = 10;
+    int num_8_1 = 10;
+    //int num_80 = ++num_8; //前置递增，先让变量+1,然后进行表达式运算
+    int num_81 = ++num_8 * 9;
+    cout<< "前置递增：" << "num_80" << "前置递增表达式：" << num_81 << endl;
+    //int num_82 = num_8++; //后置递增，先进行表达式运算，后让变量+1
+    int num_83 = num_8_1++ * 9;
+    cout<< "后置递增：" << "num_82" << "后置递增表达式：" << num_83 << endl;
+
+    //int num_84 = --num_8; //前置递增，先让变量+1,然后进行表达式运算
+    int num_85 = --num_8 * 9;
+    cout<< "前置递减：" << "num_84" << "前置递减表达式：" << num_85 << endl;
+    //int num_86 = num_8--; //后置递增，先进行表达式运算，后让变量+1
+    int num_87 = num_8-- * 9;
+    cout<< "后置递减：" << "num_86" << "后置递减表达式：" << num_87 << endl;
+    
     // 关系运算符>, <, >=, <=, ==, !=
 
     int a = 4, b = 16;
@@ -220,6 +275,53 @@ int main()
     cout <<sizeof(double)<<endl;
     cout <<sizeof(long double) << endl;
     cout <<sizeof(3.14f)<< endl;
+    cout << "type: \t\t" << "************size**************"<< endl;  
+    cout << "bool: \t\t" << "所占字节数：" << sizeof(bool);  
+    cout << "\t最大值：" << (numeric_limits<bool>::max)();  
+    cout << "\t\t最小值：" << (numeric_limits<bool>::min)() << endl;  
+    cout << "char: \t\t" << "所占字节数：" << sizeof(char);  
+    cout << "\t最大值：" << (numeric_limits<char>::max)();  
+    cout << "\t\t最小值：" << (numeric_limits<char>::min)() << endl;  
+    cout << "signed char: \t" << "所占字节数：" << sizeof(signed char);  
+    cout << "\t最大值：" << (numeric_limits<signed char>::max)();  
+    cout << "\t\t最小值：" << (numeric_limits<signed char>::min)() << endl;  
+    cout << "unsigned char: \t" << "所占字节数：" << sizeof(unsigned char);  
+    cout << "\t最大值：" << (numeric_limits<unsigned char>::max)();  
+    cout << "\t\t最小值：" << (numeric_limits<unsigned char>::min)() << endl;  
+    cout << "wchar_t: \t" << "所占字节数：" << sizeof(wchar_t);  
+    cout << "\t最大值：" << (numeric_limits<wchar_t>::max)();  
+    cout << "\t\t最小值：" << (numeric_limits<wchar_t>::min)() << endl;  
+    cout << "short: \t\t" << "所占字节数：" << sizeof(short);  
+    cout << "\t最大值：" << (numeric_limits<short>::max)();  
+    cout << "\t\t最小值：" << (numeric_limits<short>::min)() << endl;  
+    cout << "int: \t\t" << "所占字节数：" << sizeof(int);  
+    cout << "\t最大值：" << (numeric_limits<int>::max)();  
+    cout << "\t最小值：" << (numeric_limits<int>::min)() << endl;  
+    cout << "unsigned: \t" << "所占字节数：" << sizeof(unsigned);  
+    cout << "\t最大值：" << (numeric_limits<unsigned>::max)();  
+    cout << "\t最小值：" << (numeric_limits<unsigned>::min)() << endl;  
+    cout << "long: \t\t" << "所占字节数：" << sizeof(long);  
+    cout << "\t最大值：" << (numeric_limits<long>::max)();  
+    cout << "\t最小值：" << (numeric_limits<long>::min)() << endl;  
+    cout << "unsigned long: \t" << "所占字节数：" << sizeof(unsigned long);  
+    cout << "\t最大值：" << (numeric_limits<unsigned long>::max)();  
+    cout << "\t最小值：" << (numeric_limits<unsigned long>::min)() << endl;  
+    cout << "double: \t" << "所占字节数：" << sizeof(double);  
+    cout << "\t最大值：" << (numeric_limits<double>::max)();  
+    cout << "\t最小值：" << (numeric_limits<double>::min)() << endl;  
+    cout << "long double: \t" << "所占字节数：" << sizeof(long double);  
+    cout << "\t最大值：" << (numeric_limits<long double>::max)();  
+    cout << "\t最小值：" << (numeric_limits<long double>::min)() << endl;  
+    cout << "float: \t\t" << "所占字节数：" << sizeof(float);  
+    cout << "\t最大值：" << (numeric_limits<float>::max)();  
+    cout << "\t最小值：" << (numeric_limits<float>::min)() << endl;  
+    cout << "size_t: \t" << "所占字节数：" << sizeof(size_t);  
+    cout << "\t最大值：" << (numeric_limits<size_t>::max)();  
+    cout << "\t最小值：" << (numeric_limits<size_t>::min)() << endl;  
+    cout << "string: \t" << "所占字节数：" << sizeof(string) << endl;  
+    // << "\t最大值：" << (numeric_limits<string>::max)() << "\t最小值：" << (numeric_limits<string>::min)() << endl;  
+    cout << "type: \t\t" << "************size**************"<< endl;
+    
 
     //exp3-------------------------------------------
     //控制cout显示精度

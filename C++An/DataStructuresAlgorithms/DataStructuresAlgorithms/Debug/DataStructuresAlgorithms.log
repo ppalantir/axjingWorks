@@ -1,0 +1,9 @@
+﻿  DynamicArrayMain.cpp
+C:\Users\axjin\Desktop\ANCODE\axjingWorks\C++An\DataStructures_Algorithms\DataStructuresAlgorithms\DataStructuresAlgorithms\DynamicArrayMain.cpp(1,1): warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
+C:\Users\axjin\Desktop\ANCODE\axjingWorks\C++An\DataStructures_Algorithms\DataStructuresAlgorithms\DataStructuresAlgorithms\DynamicArray.h(1,1): warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
+C:\Users\axjin\Desktop\ANCODE\axjingWorks\C++An\DataStructures_Algorithms\DataStructuresAlgorithms\DataStructuresAlgorithms\DynamicArrayMain.cpp(28,5): warning C4551: 缺少参数列表的函数调用
+DynamicArrayMain.obj : error LNK2019: 无法解析的外部符号 "struct DYNAMICARRAY * __cdecl Init_Array(void)" (?Init_Array@@YAPAUDYNAMICARRAY@@XZ)，该符号在函数 "void __cdecl test01(void)" (?test01@@YAXXZ) 中被引用
+DynamicArrayMain.obj : error LNK2019: 无法解析的外部符号 "void __cdecl Push_Back_Array(struct DYNAMICARRAY *,int)" (?Push_Back_Array@@YAXPAUDYNAMICARRAY@@H@Z)，该符号在函数 "void __cdecl test01(void)" (?test01@@YAXXZ) 中被引用
+DynamicArrayMain.obj : error LNK2019: 无法解析的外部符号 "void __cdecl Print_Array(struct DYNAMICARRAY *)" (?Print_Array@@YAXPAUDYNAMICARRAY@@@Z)，该符号在函数 "void __cdecl test01(void)" (?test01@@YAXXZ) 中被引用
+DynamicArrayMain.obj : error LNK2019: 无法解析的外部符号 "void __cdecl FreeSpace_Array(struct DYNAMICARRAY *)" (?FreeSpace_Array@@YAXPAUDYNAMICARRAY@@@Z)，该符号在函数 "void __cdecl test01(void)" (?test01@@YAXXZ) 中被引用
+C:\Users\axjin\Desktop\ANCODE\axjingWorks\C++An\DataStructures_Algorithms\DataStructuresAlgorithms\Debug\DataStructuresAlgorithms.exe : fatal error LNK1120: 4 个无法解析的外部命令

@@ -1,0 +1,8 @@
+Determining if the C compiler works failed with the following output:
+Change Dir: C:/Users/axjin/Desktop/ANCODE/axjingWorks/C++An/ANLearning/DesignPattern/out/build/x64-Debug/CMakeFiles/CMakeTmp
+
+Run Build Command(s):C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe cmTC_8e074.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=16.0 /v:m && ninja: error: loading 'build.ninja': 系统找不到指定的文件。
+
+
+
+
