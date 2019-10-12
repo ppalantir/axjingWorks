@@ -5,7 +5,7 @@ import numpy as np
 
 from skimage.io import imsave, imread
 
-data_path = 'raw/'
+data_path = '../../DATA/medical_img/ultrasound-nerve-segmentation'
 
 image_rows = 420
 image_cols = 580
@@ -14,7 +14,8 @@ image_cols = 580
 def create_train_data():
     train_data_path = os.path.join(data_path, 'train')
     images = os.listdir(train_data_path)
-    total = len(images) / 2
+    total = int(len(images) / 2)
+    print(total)
 
     imgs = np.ndarray((total, image_rows, image_cols), dtype=np.uint8)
     imgs_mask = np.ndarray((total, image_rows, image_cols), dtype=np.uint8)
@@ -28,7 +29,9 @@ def create_train_data():
             continue
         image_mask_name = image_name.split('.')[0] + '_mask.tif'
         img = imread(os.path.join(train_data_path, image_name), as_grey=True)
+        #print(img)
         img_mask = imread(os.path.join(train_data_path, image_mask_name), as_grey=True)
+        print(img_mask)
 
         img = np.array([img])
         img_mask = np.array([img_mask])
@@ -91,3 +94,5 @@ def load_test_data():
 if __name__ == '__main__':
     create_train_data()
     create_test_data()
+    train_data, train_mask = load_train_data()
+    print(train_data)
