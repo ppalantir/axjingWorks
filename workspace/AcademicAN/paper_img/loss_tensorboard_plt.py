@@ -9,7 +9,7 @@ from scipy import interpolate
 from matplotlib.font_manager import FontProperties
 import csv
 from decimal import Decimal
- 
+
 '''读取csv文件'''
 def readcsv(files):
     csvfile = open(files, 'r')
@@ -47,8 +47,8 @@ if __name__ == "__main__":
 
     #figure = plt.figure()
     f, ax = plt.subplots(3,2)
-    style_list = ["g+-", "r*-", "b.-", "yo-", "s--"]
-
+    #style_list = ["g+-", "r*-", "b.-", "yo-", "s--"]
+    style_list = ["g-", "r-", "b-", "y-", "s--"]
     #ax1 = figure.add_subplot(221)
 
     
