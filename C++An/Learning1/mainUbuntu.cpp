@@ -1,6 +1,17 @@
 #include <iostream>
 
 using namespace std;
+//exp23 指针和函数
+// 实现两个数字交换
+void swap26(int *p1, int *p2){
+    int tmp = *p1;
+    *p1 = *p2;
+    *p2 = tmp;
+    cout << "swap *p1 = " << *p1 << endl;
+    cout << "swap *p2 = " << *p2 << endl;
+}
+
+
 /** 
  * exp25 函数的分文件编写:
  * 作用：让代码结构更加清晰
@@ -23,7 +34,7 @@ using namespace std;
 //函数的声明
 int compare_max(int a, int b);
 //比较两个函数，实现两个整型数字进行比较，返回最大值
-int compare_max(int a; int b){
+int compare_max(int a, int b){
 	return a>b ? a : b;
 }
 
@@ -43,6 +54,15 @@ void swapA(int num1, int num2){
 	cout << "交换后：" << endl << "num1:" << num1 << "\t" << "num2=" << num2 <<endl;
 }
 int main(){
+
+    	//exp26 指针和函数 值传递or地址传递
+	//如果是地址传递可以修饰实参
+        int a23 = 10;
+   	int b23 = 20;
+    	swap26(&a23, &b23);
+   	cout << "a23 = " << a23 << endl;
+  	cout << "b23 = " << b23 << endl;
+
 	//exp24　函数 形式：１无参无反；２无参有反；３有参无反；４有参有反
 	int a24 = 9;
 	int b24 = 19;

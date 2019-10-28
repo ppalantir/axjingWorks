@@ -16,10 +16,27 @@
 #include <limits>
 using namespace std;
 
+//exp23 指针和函数
+// 实现两个数字交换
+void swap23(int a, int b)
+{
+    int tmp = a;
+    a = b;
+    b = tmp;
+    cout << "swap a23 = " << a23 << endl;
+    cout << "swap b23 = " << b23 << endl;
+}
 
 
 int main()
 {
+    //exp23 指针和函数
+    int a23 = 10;
+    int b23 = 20;
+    swap23(a, b);
+    cout << "a23 = " << a23 << endl;
+    cout << "b23 = " << b23 << endl;
+    
     //exp22 三目运算符,返回的是变量，可以继续赋值
     //语法： 表达式1 ？ 表达式2 ：表达式3；
     //如果表达式1为真，执行表达式2，并返回表达式2的结果
