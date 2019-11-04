@@ -109,9 +109,10 @@ class TOD(object):
     
                         if py_scores[num] > threshold:
                             result_l = [fp, py_classes[num], py_boxes[num], py_scores[num], 1.0]
+                            info_list.append(result_l)
                         else:
                             result_l = [fp, int(py_classes[num]), py_boxes[num], py_scores[num], 0.0]
-                    info_list.append(result_l)
+                            #info_list.append(result_l)
                     
                     
                     #print('save %dst txt file: %s'%(i+ 1, txt_path))
