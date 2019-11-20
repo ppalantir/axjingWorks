@@ -6,6 +6,7 @@ import tensorflow as tf
 import xml.etree.ElementTree as ET
 from object_detection.utils import label_map_util
 from object_detection.utils import visualization_utils as vis_util
+from object_detection.utils import per_image_evaluation
 from sklearn.metrics import precision_recall_curve
 import matplotlib.pyplot as plt
 import matplotlib as mpl
@@ -44,7 +45,47 @@ def get_file_name_path(dir_file, format_key):
 
     return jpg_file_name, jpg_file_path
 
-# batch test image and general *label.txt
+def read_xml(f_path):
+
+    xml_list = []
+    filenames = []
+    classes = []
+    boxes = []
+    label_s = {'plaque': 1, 'sclerosis': 2, 'vessel': 3}
+    
+    tree = ET.parse(f_path)
+    root = tree.getroot()
+    for member in root.findall('object'):
+        if member[0].text != 'pseudomorphism' and member[0].text != 'normal' and member[0].text != "blood vessel":
+            label = label_s.get(member[0].text)
+            value = [root.find('filename').text,
+                    # int(root.find('size')[0].text),
+                    # int(root.find('size')[1].text),
+                    label,
+                    float(member[4][1].text),
+                    float(member[4][0].text),
+                    float(member[4][3].text),
+                    float(member[4][2].text)
+                    ]
+            xml_list.append(value)
+    return xml_list
+
+def campute_IoU(gt_box, pre_box):
+    '''
+    gt_box:shape=[n,4]
+    pre_box:shape=[m,4]
+    '''
+    gt_ymin, gt_xmin, gt_ymax,gt_xmax=gt_box
+    pre_ymin, pre_xmin, pre_ymax,pre_xmax=gt_box
+    
+    cymin = np.maximum(gt_ymin, pre_ymin)
+    cxmin = np.maximum(gt_xmin, pre_xmin)
+    cymax = np.minimum(gt_ymax, pre_ymax)
+    cxmax = np.minimum(gt_xmax, pre_xmax)
+
+    cw = np.maximum(cxmax - cxmin + 1., 0.)
+    ch = np.maximum(cymax - cymin + 1., 0.)
+    inters = cw * ch
 
 
 class TOD(object):
@@ -75,21 +116,28 @@ class TOD(object):
         return category_index
 
     def get_detect_info(self, image_path, threshold):
-        # image = cv2.imread(image_path)
-        # size = image.shape
-
+        
         jpg_file_name, jpg_file_path = get_file_name_path(
             image_path, format_key=".jpg")
         with self.detection_graph.as_default():
             with tf.Session(graph=self.detection_graph) as sess:
                 # Expand dimensions since the model expects images to have shape: [1, None, None, 3]
-
+                computer_label = 3
                 # print(jpg_file_path)
                 info_list = []
                 for fp, i in zip(jpg_file_path, range(len(jpg_file_path))):
 
                     image = cv2.imread(fp)
-                    size = np.shape(image)
+                    # size = np.shape(image)
+                    height, width, depth = image.shape
+                    print(height, width, depth)
+                    groundtruth_boxes = []
+                    xml_info = read_xml(fp[:-4] + ".xml")
+                    for x in range(len(xml_info)):
+                        print(xml_info[x][1])
+                        if int(xml_info[x][1]) == computer_label:
+                            groundtruth_boxes.append(xml_info[x][2:])
+                    print(groundtruth_boxes)
                     # print(size)
                     image_np_expanded = np.expand_dims(image, axis=0)
                     image_tensor = self.detection_graph.get_tensor_by_name(
@@ -106,75 +154,38 @@ class TOD(object):
                     (boxes, scores, classes, num_detections) = sess.run(
                         [boxes, scores, classes, num_detections],
                         feed_dict={image_tensor: image_np_expanded})
-                    # Visualization of the results of a detection.
-
-                    vis_util.visualize_boxes_and_labels_on_image_array(
-                        image,
-                        np.squeeze(boxes),
-                        np.squeeze(classes).astype(np.int32),
-                        np.squeeze(scores),
-                        self.category_index,
-                        use_normalized_coordinates=True,
-                        line_thickness=8)
-                    print(num_detections, num_detections.shape)
-                    print(scores[0], scores[0].shape)
-                    result_list = []
-                    py_scores = np.array(scores)[0]
-                    py_classes = np.array(classes)[0]
-                    py_boxes = np.array(boxes)[0]
-                    for num in range(len(scores[0])):
+                                    
+                    
+                    py_scores = np.array(scores[0])
+                    py_classes = np.array(classes[0])
+                    py_boxes = np.array(boxes[0])
+                    scores = np.squeeze(scores)
+                    classes = np.squeeze(classes)
+                    groundtruth_groundtruth_is_difficult_list = np.array(np.ones(len(groundtruth_boxes)), dtype=bool)
+                    groundtruth_groundtruth_is_group_of_list = np.array(np.ones(len(groundtruth_boxes)), dtype=bool)
+                    #print("=====:", groundtruth_groundtruth_is_group_of_list)
+                    detected_boxes = []
+                    detected_scores = []
+                    for num in range(len(py_scores)):
                         # print(py_scores[0])
-                        print(num)
-                        if py_scores[num] > threshold:
-                            result_l=[fp, py_classes[num],
-                                py_boxes[num], py_scores[num], 1.0]
+                        #print(num)
+                        if classes[num] == computer_label:
+                            #print(py_boxes[num])
+                            boxes = [float(py_boxes[num][0] * height), float(py_boxes[num][1] * width), float(py_boxes[num][2] * height), float(py_boxes[num][3] * width)]
+                            detected_boxes.append(boxes)
+                            detected_scores.append(scores[num])
+                    #print(detected_boxes,"\n", ":", detected_scores)
 
-                        else:
-                            result_l=[fp, py_classes[num],
-                                py_boxes[num], py_scores[num], 0.0]
-                        info_list.append(result_l)
-
-                    # print('save %dst txt file: %s'%(i+ 1, txt_path))
-
-                # print("++++++++++++++++++++++++++++++")
-                print(np.array(info_list).T)
-                print(np.array(info_list).shape)
-
-                return info_list
-
-
-def get_pr_ap(info_list, num_label):
-    '''
-    info_list存储预测列表[文件路径，标签映射， bbox, scores, gt_label]
-    num_label标签映射数字
-
-    '''
-    label_info=[]
-    num_gt_l=[]
-    for inf in info_list:
-        if inf[1] == num_label:
-
-            label_info.append(inf)
-        if inf[4] == 1.0:
-            num_gt_l.append(inf[4])
-    num_gt=len(num_gt_l)
-    # num_gt = 2
-    label_info=np.array(label_info).T
-    # print(label_info, label_info.shape)
-    y_true=np.array(label_info[4, :], np.float)
-    y_scores=np.array(label_info[3, :], np.float)
-    # print(y_scores)
-    # print(y_true)
-
-    precision, recall=metrics.compute_precision_recall(
-        y_scores, y_true, num_gt)
-    print("precision:", precision, "\n", precision.shape, "\n", 
-          "recall", recall, "\n", recall.shape)
-    average_precision=metrics.compute_average_precision(precision, recall)
-    average_precision='{:.3f}'.format(average_precision)
-    print("average_precision:", average_precision)
-    return precision, recall, average_precision
-
+                    print("++++++++++++++++++++++++++++++")
+                    
+                    num_groundtruth_classes = 3
+                    matching_iou_threshold = 0.5
+                    nms_iou_threshold = 1.0
+                    nms_max_output_boxes = 10000
+                    group_of_weight = 0.5
+                    eval = per_image_evaluation.PerImageEvaluation(num_groundtruth_classes, matching_iou_threshold, nms_iou_threshold, nms_max_output_boxes, group_of_weight)
+                    scores, tp_fp_labels = eval._compute_tp_fp_for_single_class(np.array(detected_boxes),np.array(detected_scores),np.array(groundtruth_boxes),groundtruth_groundtruth_is_difficult_list, groundtruth_groundtruth_is_group_of_list)
+                    print(scores, "\n", tp_fp_labels)
 
 if __name__ == "__main__":
     # batch detecion video slice image, general label.txt
@@ -182,36 +193,4 @@ if __name__ == "__main__":
     path="/home/andy/anaconda3/envs/tensorflow-gpu/axingWorks/ANcWork/Transverse/InceptionTrain/images/verify"
     threshold=0.5
     detecotr=TOD()
-    info_list=detecotr.get_detect_info(path, threshold)
-
-    plaque_precision, plaque_recall, plaque_AP=get_pr_ap(info_list, 1.0)
-    sclerosis_precision, sclerosis_recall, sclerosis_AP=get_pr_ap(
-        info_list, 2.0)
-    pseudomorphism_precision, pseudomorphism_recall, pseudomorphism_AP=get_pr_ap(
-        info_list, 3.0)
-    # normal_precision, normal_recall, normal_AP = get_pr_ap(info_list, 4)
-
-    # precision, recall, thresholds = precision_recall_curve(y_true, y_scores)
-    plt.figure(1)  # 创建图表1
-    plt.title('Precision/Recall threshold = 0.5')  # give plot a title
-    plt.xlabel('Recall')  # make axis labels
-    plt.ylabel('Precision')
-    plt.figure(1)
-
-    plt.plot(plaque_recall, plaque_precision,
-             color='green', label=label_map[1])
-    # plt.annotate('AP:' + str(plaque_AP), xy=(0.55, 1), xytext=(0.45, 0.95), arrowprops=dict(facecolor='green', shrink=0.05))
-    # plt.plot(sclerosis_recall, sclerosis_precision, color='red', label=label_map[2])
-    # plt.annotate('AP:' + str(sclerosis_AP), xy=(0.15, 0.95), xytext=(0.23, 0.90), arrowprops=dict(facecolor='red', shrink=0.05))
-    # plt.plot(pseudomorphism_recall, pseudomorphism_precision, 'o-', color='skyblue', label=label_map[3])
-    # plt.annotate('AP:' + str(pseudomorphism_AP), xy=(0.13, 0.825), xytext=(0.2, 0.80), arrowprops=dict(facecolor='skyblue', shrink=0.05))
-    # plt.plot(normal_recall, normal_precision, color='blue', label=label_map[4])
-    # plt.annotate('AP:' + str(normal_AP), xy=(0.13, 0.75), xytext=(0.15,
-                                                                #   0.70), arrowprops=dict(facecolor = 'blue', shrink = 0.05))
-    plt.legend()  # 显示图例
-
-    # plt.plot(recall, precision)
-    plt.savefig('p-r.png')
-    plt.show()
-
-    print("Successful!!!")
+    info_list=detecotr.get_detect_info(path, threshold)            

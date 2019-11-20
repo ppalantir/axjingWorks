@@ -220,6 +220,8 @@ def get_predict_box(info_list):
 
 
 def snake_cnn(info_list):
+    im_snake_step = []
+    im_snake_dist = []
     plt.figure()
     for im in range(len(info_list)):
         file_n_ = info_list[im][0][0].split('/')
@@ -236,6 +238,9 @@ def snake_cnn(info_list):
         plt.imshow(img, cmap="gray")
         color = ['b', 'g', 'c', 'y']
         color_p = ['b--', 'g--', 'c--', 'y--']
+
+        im_step = []
+        im_dist = []
         for i in range(len(info_list[im])):
             ymin, xmin, ymax, xmax = [int(info_list[im][i][2][0] * height), int(
                 info_list[im][i][2][1] * width), int(info_list[im][i][2][2] * height), int(info_list[im][i][2][3] * width)]
@@ -255,26 +260,49 @@ def snake_cnn(info_list):
             # init = getCircleContour((2689, 1547), (510, 380), N=200)
 
             # Snake模型迭代输出
-            snake = active_contour(gaussian(img, 3), snake=init, alpha=0.8,
-                                   beta=10, gamma=0.01, w_line=-2, w_edge=500, convergence=0.1)
+            snake, i_l, dist_l = active_contour(gaussian(img, 3), snake=init, alpha=0.8,
+                                                beta=10, gamma=0.01, w_line=-2, w_edge=500, convergence=0.1)
 
+            im_step.append(i_l)
+            im_dist.append(i_l)
             # snake_plaque = active_contour(gaussian(img, 3), snake=init, alpha=0.8,
             #                        beta=10, gamma=0.01, w_line=1, w_edge=500, convergence=0.1)
             # 绘图显示
             if i == 0:
                 plt.plot(init[:, 0], init[:, 1], 'r--',
-                         label="obj_contour", lw=0.6)
-                plt.plot(snake[:, 0], snake[:, 1], color[i], label="Seg", lw=1)
+                         label="obj_cont", lw=0.6)
+                plt.plot(snake[:, 0], snake[:, 1],
+                         color[i], label="Obj_Seg", lw=1)
             else:
                 plt.plot(init[:, 0], init[:, 1], 'r--', lw=0.6)
                 plt.plot(snake[:, 0], snake[:, 1], color[i], lw=1)
             # plt.plot(init_plaque[:, 0], init_plaque[:, 1], '--r', lw=1)
             # plt.plot(snake_plaque[:, 0], snake_plaque[:, 1], color_p[i], lw=1)
             plt.xticks([]), plt.yticks([]), plt.axis("off")
+        im_snake_step.append(im_step)
+        im_snake_dist.append(im_dist)
+    np.save("im_snake_step.npy", im_snake_step)
+    np.save("im_snake_dist.npy", im_snake_dist)
     # plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=0,
     #            ncol=3, mode="expand", borderaxespad=0.)
     # plt.legend()
     plt.savefig('./pred_seg.png', dpi=300)
+    plt.show()
+
+
+def plt_snake_dist(step_path, dist_path):
+    im_snake_step = np.load(step_path)
+    im_snake_dist = np.load(dist_path)
+    mn = im_snake_dist.shape
+
+    print(mn)
+    print(im_snake_dist.size)
+    plt.figure()
+    for i in range(len(im_snake_dist)):
+
+        for j in range(len(im_snake_dist[i])):
+            # plt.subplot(7, 3, j + 1)
+            plt.plot(im_snake_step[i][j], im_snake_dist[i][j])
     plt.show()
 
 
@@ -283,8 +311,12 @@ if __name__ == "__main__":
     label_map = {1: "plaque", 2: "sclerosis", 3: "vessel"}
     path = "./test_tmp"
     threshold = 0.5
-    detecotr = TOD()
-    info_list = detecotr.get_detect_info(path, threshold)
-    print(info_list)
-    print(np.shape(info_list))
-    snake_cnn(info_list)
+    # detecotr = TOD()
+    # info_list = detecotr.get_detect_info(path, threshold)
+    # print(info_list)
+    # print(np.shape(info_list))
+    # snake_cnn(info_list)
+
+    im_snake_step_path = "/home/andy/anaconda3/ANCODE/axjingWorks/workspace/AcademicAN/TwoStage/im_snake_step.npy"
+    im_snake_dist_path = "/home/andy/anaconda3/ANCODE/axjingWorks/workspace/AcademicAN/TwoStage/im_snake_dist.npy"
+    plt_snake_dist(im_snake_step_path, im_snake_dist_path)
