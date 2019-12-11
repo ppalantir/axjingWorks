@@ -271,7 +271,7 @@ def voc_eval(det_path,
         class_recs[imagename] = {'bbox': bbox,
                                  'difficult': difficult,
                                  'det': det}
-    #print(class_recs)
+    print(class_recs)
 
     # read dets
     label_map = {1.0: "plaque", 2.0: "sclerosis", 3.0: "vessel"}
@@ -487,13 +487,13 @@ def compute_ap(gt_boxes, gt_class_ids,
 if __name__ == "__main__":
     label_map = {1: "plaque", 2: "sclerosis", 3: "vessel"}
     eval_path = "/home/andy/anaconda3/envs/tensorflow-gpu/axingWorks/ANcWork/Transverse/InceptionTrain/images/raw_test"
-    threshold=0.5
-    detecotr=TOD()
-    info_list=detecotr.get_detect_info(eval_path, threshold)
+    # threshold=0.5
+    # detecotr=TOD()
+    # info_list=detecotr.get_detect_info(eval_path, threshold)
 
     det_path = "/home/andy/anaconda3/envs/tensorflow-gpu/axingWorks/ANcWork/Transverse/InceptionTrain/images/raw_test/detection_info.npy"
     annopath = "/home/andy/anaconda3/envs/tensorflow-gpu/axingWorks/ANcWork/Transverse/InceptionTrain/images/raw_test/xml"
-    imagesetfile = "/home/andy/anaconda3/envs/tensorflow-gpu/axingWorks/ANcWork/Transverse/InceptionTrain/raw_test"
+    imagesetfile = "/home/andy/anaconda3/envs/tensorflow-gpu/axingWorks/ANcWork/Transverse/InceptionTrain/images/raw_test"
     classname = "plaque"
     # cachedir = "/home/andy/anaconda3/envs/tensorflow-gpu/axingWorks/ANcWork/Transverse/InceptionTrain/images/balance_test/xml"
     rec, prec, ap = voc_eval(det_path,
