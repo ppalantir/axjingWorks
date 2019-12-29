@@ -299,7 +299,7 @@ def snake_cnn(info_list):
             # plt.plot(snake_plaque[:, 0], snake_plaque[:, 1], color_p[i], lw=1)
             plt.xticks([]), plt.yticks([]), plt.axis("off")
             plt.legend(loc="upper right", fontsize=9,frameon=True,ncol=2,shadow=True)
-            plt.tight_layout()
+        plt.tight_layout()
             
         im_snake_step.append(im_step)
         im_snake_dist.append(im_dist)
