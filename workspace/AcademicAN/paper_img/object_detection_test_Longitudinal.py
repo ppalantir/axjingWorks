@@ -209,13 +209,13 @@ for image_path in path_files:
       category_index,
       instance_masks=output_dict.get('detection_masks'),
       use_normalized_coordinates=True,
-      line_thickness=8)
+      line_thickness=10)
   print(image_np)
   #image_np_pt = tf.image.draw_bounding_boxes(image_np_p, )
   for i in range(len(xml_info)):
     font = cv2.FONT_HERSHEY_TRIPLEX
     cv2.rectangle(image_np, (xml_info[i][3], xml_info[i][2]), (xml_info[i][5], xml_info[i][4]), (225, 55, 55), 4)
-    cv2.putText(image_np, xml_info[i][1], (xml_info[i][3]+1, xml_info[i][2]+1), font, 1, (255, 55, 55), 1)
+    cv2.putText(image_np, xml_info[i][1], (xml_info[i][3]+1, xml_info[i][2]+1), font, 1.2, (255, 55, 55), 1.2)
   cv2.imwrite('./raw_test_ver_Long/test_' + image_name[:-4] + '.png', image_np)
   # plt.figure(figsize=IMAGE_SIZE)
   # plt.imshow(image_np)
