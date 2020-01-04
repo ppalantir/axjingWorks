@@ -28,13 +28,14 @@ ils = circle_level_set(image.shape, (y_centre, x_centre), y_axis_ellipse+3)
 start = time.time()
 eils = ellipse_level_set(image.shape, (y_centre, x_centre),x_axis_ellipse, y_axis_ellipse+3)
 print(time.time()-start)
-u = morphological_geodesic_active_contour(gimg, 20, eils,threshold=0.02, smoothing=1,balloon=-1)
+u = morphological_geodesic_active_contour(gimg, 20, eils,threshold=0.002, smoothing=2,balloon=-1)
+
 
 x_centre_s, y_centre_s = (567, 351)
 x_axis_ellipse_s, y_axis_ellipse_s = (60, 20)
 
 eils_s = ellipse_level_set(image.shape, (y_centre_s,x_centre_s), x_axis_ellipse_s+4,y_axis_ellipse_s+4)
-u_s = morphological_geodesic_active_contour(gimg, 20, eils_s, smoothing=1,balloon=-1)
+u_s = morphological_geodesic_active_contour(gimg, 40, eils_s, smoothing=1,balloon=-1)
 
 plt.figure(2)
 plt.contour(u, [0.3], colors="r")

@@ -1,6 +1,7 @@
 import os
 import cv2
 import time
+import json
 import numpy as np
 import tensorflow as tf
 import xml.etree.ElementTree as ET
@@ -21,6 +22,8 @@ from skimage.color import rgb2gray
 from skimage import data
 import matplotlib.pyplot as plt
 # from snake import getCircleContour
+from skimage.segmentation.morphsnakes import morphological_geodesic_active_contour, inverse_gaussian_gradient,circle_level_set, ellipse_level_set
+
 
 mpl.use("TKAgg")
 mpl.rcParams['font.family'] = 'sans-serif'
@@ -56,25 +59,23 @@ def get_file_name_path(dir_file, format_key):
 
 # batch test image and general *label.txt
 
-'''读取csv seg文件'''
-def readcsv(files):
-    csvfile = open(files, 'r')
-    plots = csv.reader(csvfile, delimiter=',')
-    x = []
-    y = []
-    for row in plots: 
-        #print(y)
-        if row[1] == "Step":
-            print(row)
-        else:
-            x.append(int(str(row[1])))
-            y.append(float(row[2]))
-            #print(row[1], row[2])
+'''读取json seg文件'''
+def readjson(js_path, match_name):
+    with open(js_path) as f:
+        js = json.load(f)
+        for k, v in js.items():
+            if v["filename"]==match_name:
+                gt_seg = v
+        
+    return gt_seg
 
 
 class TOD(object):
     def __init__(self):
+        #横切
         self.PATH_TO_CKPT = "/home/andy/anaconda3/envs/tensorflow-gpu/axingWorks/ANcWork/Transverse/inceptionResNetTrain/trained-inference-graphs_blood/frozen_inference_graph.pb"
+        #纵切
+        # self.PATH_TO_CKPT = "/home/andy/anaconda3/envs/tensorflow-gpu/axingWorks/ANcWork/Longitudinal/inceptionResNetTrain/trained-inference-vessel/output_inference_graph_v1.pb/frozen_inference_graph.pb"
         self.PATH_TO_LABELS = "/home/andy/anaconda3/envs/tensorflow-gpu/axingWorks/ANcWork/Transverse/inceptionResNetTrain/annotations/label_map3.pbtxt"
         self.NUM_CLASSES = 3
         self.detection_graph = self._load_model()
@@ -159,40 +160,90 @@ class TOD(object):
                     #     result_l = [fp, int(py_classes[num]), py_boxes[num], py_scores[num], 0.0]
 
                     # print('save %dst txt file: %s'%(i+ 1, txt_path))
+                    np.save("./paperSegSnake/incepResNet-L_RPN-EdgeSnake.npy", info_list)
                 return info_list
 
 
-def get_pr_ap(info_list, num_label):
-    '''
-    info_list存储预测列表[文件路径，标签映射， bbox, scores, gt_label]
-    num_label标签映射数字
+class TOD_L(object):
+    def __init__(self):
+        #纵切
+        self.PATH_TO_CKPT = "/home/andy/anaconda3/envs/tensorflow-gpu/axingWorks/ANcWork/Longitudinal/inceptionResNetTrain/trained-inference-vessel/output_inference_graph_v1.pb/frozen_inference_graph.pb"
+        self.PATH_TO_LABELS = "/home/andy/anaconda3/envs/tensorflow-gpu/axingWorks/ANcWork/Transverse/inceptionResNetTrain/annotations/label_map3.pbtxt"
+        self.NUM_CLASSES = 3
+        self.detection_graph = self._load_model()
+        self.category_index = self._load_label_map()
+        category_index = self.category_index
 
-    '''
-    label_info = []
-    num_gt_l = []
-    for inf in info_list:
-        if inf[1] == num_label:
+    def _load_model(self):
+        detection_graph = tf.Graph()
+        with detection_graph.as_default():
+            od_graph_def = tf.GraphDef()
+            with tf.gfile.GFile(self.PATH_TO_CKPT, 'rb') as fid:
+                serialized_graph = fid.read()
+                od_graph_def.ParseFromString(serialized_graph)
+                tf.import_graph_def(od_graph_def, name='')
+        return detection_graph
 
-            label_info.append(inf)
-        if inf[4] == 1.0:
-            num_gt_l.append(inf[4])
-    num_gt = len(num_gt_l)
-    label_info = np.array(label_info).T
-    print(label_info)
-    y_true = np.array(label_info[4][:], np.float)
-    y_scores = np.array(label_info[3][:], np.float)
+    def _load_label_map(self):
+        label_map = label_map_util.load_labelmap(self.PATH_TO_LABELS)
+        categories = label_map_util.convert_label_map_to_categories(label_map,
+                                                                    max_num_classes=self.NUM_CLASSES,
+                                                                    use_display_name=True)
+        category_index = label_map_util.create_category_index(categories)
+        return category_index
 
-    precision, recall = metrics.compute_precision_recall(
-        y_scores, y_true, num_gt)
-    print("precision:", precision, "recall", recall)
-    average_precision = metrics.compute_average_precision(precision, recall)
-    average_precision = '{:.3f}'.format(average_precision)
-    print("average_precision:", average_precision)
-    return precision, recall, average_precision
+    def get_detect_info(self, image_path, threshold):
+    
+        jpg_file_name, jpg_file_path = get_file_name_path(
+            image_path, format_key=".jpg")
+        with self.detection_graph.as_default():
+            with tf.Session(graph=self.detection_graph) as sess:
+                info_list = []
+                for fp, i in zip(jpg_file_path, range(len(jpg_file_path))):
+                    print(fp)
 
+                    image = cv2.imread(fp)
+                    size = np.shape(image)
+                    image_np_expanded = np.expand_dims(image, axis=0)
+                    image_tensor = self.detection_graph.get_tensor_by_name(
+                        'image_tensor:0')
+                    boxes = self.detection_graph.get_tensor_by_name(
+                        'detection_boxes:0')
+                    scores = self.detection_graph.get_tensor_by_name(
+                        'detection_scores:0')
+                    classes = self.detection_graph.get_tensor_by_name(
+                        'detection_classes:0')
+                    num_detections = self.detection_graph.get_tensor_by_name(
+                        'num_detections:0')
+
+                    (boxes, scores, classes, num_detections) = sess.run(
+                        [boxes, scores, classes, num_detections],
+                        feed_dict={image_tensor: image_np_expanded})
+                    vis_util.visualize_boxes_and_labels_on_image_array(
+                        image,
+                        np.squeeze(boxes),
+                        np.squeeze(classes).astype(np.int32),
+                        np.squeeze(scores),
+                        self.category_index,
+                        use_normalized_coordinates=True,
+                        line_thickness=8)
+                    result_list = []
+                    for num in range(int(num_detections[0])):
+                        py_scores = np.squeeze(scores)[num]
+                        py_classes = np.squeeze(classes)[num]
+                        py_boxes = np.squeeze(boxes)[num]
+                       
+                        if py_scores > threshold:
+                            result_l = [fp, py_classes,
+                                        py_boxes, py_scores, 1.0]
+                            result_list.append(result_l)
+                    print(result_list)
+                    info_list.append(result_list)
+
+                    np.save("./paperSegSnake/incepResNet-L_RPN-EdgeSnake_L.npy", info_list)
+                return info_list
 
 def read_xml(f_path):
-
     xml_list = []
     filenames = []
     classes = []
@@ -228,20 +279,28 @@ def get_predict_box(info_list):
         img = cv2.imread(info_list[0][0])
         height, width, depth = img.shape
         print(height, width, depth)
-        ymin, xmin, ymax, xmax = [int(info_list[0][2][0] * height), int(
-            info_list[0][2][1] * width), int(info_list[0][2][2] * height), int(info_list[0][2][3] * width)]
+        ymin, xmin, ymax, xmax = [int(info_list[0][2][0] * height), int(info_list[0][2][1] * width), int(info_list[0][2][2] * height), int(info_list[0][2][3] * width)]
         print(ymin, xmin, ymax, xmax)
     return ymin, xmin, ymax, xmax
 
 
-def snake_cnn(info_list):
+def snake_cnn(info_list, gt_segPath, control=None):
+    """
+    info_list：DL模型检测信息
+    gt_segPath：分割图像存储路径
+    control=None：T代表横切， L代表纵切
+    """
+    labelMap = {1.0: "plaque", 2.0: "sclerosis", 3.0: "vessel"}
+    patient_name={"蔡春灵":"患者a", "陈胜球":"患者b", "彭伟洪":"患者c", "胡瑞景":"患者d", "陈善威":"患者e", "熊伟":"患者f", "文创富":"患者g", "章克亮":"患者h"}
+
     im_snake_step = []
     im_snake_dist = []
-    figure = plt.figure(figsize=(12,7))
-    patient_name={"蔡春灵":"患者a", "陈胜球":"患者b", "彭伟洪":"患者c", "蔡一凡":"患者d", "胡瑞景":"患者e", "熊伟":"患者f", "文创富":"患者g", "章克亮":"患者h"}
+    figure = plt.figure(figsize=(12,5.5))
+    
     for im in range(len(info_list)):
-        file_n_ = info_list[im][0][0].split('/')
-        file_n_ = file_n_[-1][:-4].split("-")
+        print(info_list[im][0][0])
+        file_n_0 = info_list[im][0][0].split('/')
+        file_n_ = file_n_0[-1][:-4].split("-")
         file_n = patient_name[file_n_[0]] + "-" + file_n_[1] + "-" + file_n_[2]
         img_ = cv2.imread(info_list[im][0][0])  # 读入图像
         height, width, depth = img_.shape
@@ -249,26 +308,24 @@ def snake_cnn(info_list):
         seg_img = cv.Canny(img_, 150, 200)
         lalps_img = cv.Laplacian(img_, cv.CV_16S, ksize=3)
         plt.subplot(2, 4, im + 1)
-        # plt.subplots_adjust(left=0.125, bottom=0.125, right=0.25, top=0.25,
-        #                     wspace=0.125, hspace=0.125)
-        plt.title(file_n, fontsize=9, fontproperties=myfont)
         plt.imshow(img, cmap="gray")
-        color = ['b', 'g', 'c', 'y']
-        color_p = ['b--', 'g--', 'c--', 'y--']
+        
+        color_dict = {"vessel":'b--',"sclerosis":"g--", "plaque":"y--"}
 
         im_step = []
         im_dist = []
         for i in range(len(info_list[im])):
-            ymin, xmin, ymax, xmax = [int(info_list[im][i][2][0] * height), int(
-                info_list[im][i][2][1] * width), int(info_list[im][i][2][2] * height), int(info_list[im][i][2][3] * width)]
-
+            print(info_list[im][i][1])
+            
+            ymin, xmin, ymax, xmax = [int(info_list[im][i][2][0] * height), int(info_list[im][i][2][1] * width), int(info_list[im][i][2][2] * height), int(info_list[im][i][2][3] * width)]
+            
             # 根据CNN预测坐标，定义椭圆方程
             x_axis_ellipse = abs(xmax-xmin)/2
             y_axis_ellipse = abs(ymin-ymax)/2
             x_centre = xmin + x_axis_ellipse
             y_centre = ymin + y_axis_ellipse
             # 圆的参数方程：(220, 100) r=100
-            t = np.linspace(0, 2*np.pi, 666)  # 参数t, [0,2π]
+            t = np.linspace(0, 2*np.pi, 500)  # 参数t, [0,2π]
             x = x_centre + x_axis_ellipse*np.cos(t)
             y = y_centre + y_axis_ellipse*np.sin(t)
 
@@ -277,37 +334,237 @@ def snake_cnn(info_list):
             # init = getCircleContour((2689, 1547), (510, 380), N=200)
 
             # Snake模型迭代输出
-            # snake, i_l, dist_l = active_contour(gaussian(img, 3), snake=init, alpha=0.8,
-            #                                     beta=10, gamma=0.01, w_line=-2, w_edge=500, convergence=0.1)
-            snake, i_l, dist_l = active_contour(gaussian(img, 3), snake=init, alpha=0.9,
-                                                beta=9, gamma=0.01, w_line=-6, w_edge=260, convergence=0.1)
+            # snake, i_l, dist_l = active_contour(gaussian(img, 3), snake=init, alpha=0.8, beta=10, gamma=0.01, w_line=-2, w_edge=500, convergence=0.1)
+            # snake, i_l, dist_l = active_contour(gaussian(img, 3), snake=init, alpha=0.8, beta=19, gamma=0.01, w_line=-2, w_edge=360, convergence=0.2)
+            if control == "T":
+                if float(info_list[im][i][1])==3.0:
+                    snake, i_l, dist_l = active_contour(gaussian(img, 3), snake=init, alpha=0.1, beta=10, gamma=0.01, max_iterations=1200, w_line=0, w_edge=-600, convergence=0.1)
+                else:
+                    snake, i_l, dist_l = active_contour(gaussian(img, 3), snake=init, alpha=0.1, beta=30, gamma=0.01, max_iterations=1200, w_line=-1, w_edge=360, convergence=0.1)
+            if control == "L":
+                if float(info_list[im][i][1])==3.0:
+                    # snake, i_l, dist_l = active_contour(gaussian(img, 3), snake=init, alpha=0.2, beta=200, gamma=0.01, max_iterations=1200, w_line=20, w_edge=600, convergence=0.1)
+                    continue
+                else:
+                    snake, i_l, dist_l = active_contour(gaussian(img, 3), snake=init, alpha=0.1, beta=30, gamma=0.01, max_iterations=1200, w_line=-1, w_edge=360, convergence=0.1)
+
 
             im_step.append(i_l)
-            im_dist.append(i_l)
+            im_dist.append(dist_l)
             # snake_plaque = active_contour(gaussian(img, 3), snake=init, alpha=0.8,
             #                        beta=10, gamma=0.01, w_line=1, w_edge=500, convergence=0.1)
             # 绘图显示
+            print("------------:", info_list[im][i][1])
+            if float(info_list[im][i][1]) == 3.0:
+                color_ = "darkorchid"
+            elif float(info_list[im][i][1]) == 2.0:
+                color_ = "cyan"
+            elif float(info_list[im][i][1]) == 1.0:
+                color_ = "orangered"
             if i == 0:
-                plt.plot(init[:, 0], init[:, 1], 'r--',
-                         label="obj_cont", lw=0.6)
-                plt.plot(snake[:, 0], snake[:, 1],
-                         color[i], label="Obj_Seg", lw=1)
+                # plt.plot(init[:, 0], init[:, 1], 'r--', label="DLinit", lw=0.6)
+                plt.plot(snake[:, 0], snake[:, 1], color_, label="DLeSnake", lw=0.9)
             else:
-                plt.plot(init[:, 0], init[:, 1], 'r--', lw=0.6)
-                plt.plot(snake[:, 0], snake[:, 1], color[i], lw=1)
+                # plt.plot(init[:, 0], init[:, 1], 'r--', lw=0.6)
+                plt.plot(snake[:, 0], snake[:, 1], color_, lw=0.9)
             # plt.plot(init_plaque[:, 0], init_plaque[:, 1], '--r', lw=1)
             # plt.plot(snake_plaque[:, 0], snake_plaque[:, 1], color_p[i], lw=1)
-            plt.xticks([]), plt.yticks([]), plt.axis("off")
-            plt.legend(loc="upper right", fontsize=9,frameon=True,ncol=2,shadow=True)
-        plt.tight_layout()
-            
+            # font = cv2.FONT_HERSHEY_TRIPLEX
+            # cv2.rectangle(img, (xmin, ymin), (xmax, ymax), (225, 55, 55), 4)
+            # cv2.putText(img, labelMap[float(info_list[im][i][1])], (xmin+1, ymin+1), font, 1, (255, 55, 55), 1)
+        
+        #画出人工分割标签
+        print(file_n_0[-1])
+        gt_seg = readjson(gt_segPath, file_n_0[-1])
+        print(file_n_0[-1], ":", gt_seg)
+        lc = 0
+        for gt_info in gt_seg["regions"]:
+            x_seg = np.array(gt_info["shape_attributes"]["all_points_x"], dtype=int) 
+            y_seg = np.array(gt_info["shape_attributes"]["all_points_y"], dtype=int) 
+            label_seg = gt_info["region_attributes"]["vasc venous"]
+            print(label_seg)
+            if control == "T":
+                if lc == 0:
+                    plt.plot(x_seg, y_seg, color_dict[label_seg], label="GTSeg", lw=1.2)
+                else:
+                    plt.plot(x_seg, y_seg, color_dict[label_seg], lw=1.2)
+            elif control == "L":
+                if label_seg == "vessel":
+                    continue
+                else:
+                    if lc == 0:
+                        plt.plot(x_seg, y_seg, color_dict[label_seg], label="GTSeg", lw=1.2)
+                    else:
+                        plt.plot(x_seg, y_seg, color_dict[label_seg], lw=1.2)
+            lc = lc + 1
+        
+        plt.xticks([]), 
+        # plt.yticks([]),
+        plt.axis("off")
+        # plt.ylabel(file_n)
+        # figure.legend(loc="upper right", fontsize=9,frameon=True,ncol=2,shadow=True)
+        # plt.tight_layout()
+        plt.subplots_adjust(wspace=0.01,hspace=0.03)
+        plt.title(file_n, fontsize=9, fontproperties=myfont)
+        # plt.title(file_n_0[-1][:-4], fontsize=9, fontproperties=myfont)
+
         im_snake_step.append(im_step)
         im_snake_dist.append(im_dist)
-    np.save("im_snake_step.npy", im_snake_step)
-    np.save("im_snake_dist.npy", im_snake_dist)
-    plt.suptitle("IncepResNet-L_RPN EdgeSnake", fontsize=10)
-    plt.savefig('./edge_T_Snake.svg', format="svg")
-    plt.show()
+    if control == "T":
+        plt.suptitle("IncepResNet-L_RPN-EdgeSnake Transverse", fontsize=10)
+    else:
+        plt.suptitle("IncepResNet-L_RPN-EdgeSnake Longitudinal", fontsize=10)
+
+    np.save('./'+control+"_im_snake_step.npy", im_snake_step)
+    np.save('./'+control+"_im_snake_dist.npy", im_snake_dist)
+    plt.savefig('./'+control+'_edge_Snake.svg', format="svg")
+
+def Morphsnake_cnn(info_list, gt_segPath, control=None):
+    """
+    info_list：DL模型检测信息
+    gt_segPath：分割图像存储路径
+    control=None：T代表横切， L代表纵切
+    """
+    labelMap = {1.0: "plaque", 2.0: "sclerosis", 3.0: "vessel"}
+    patient_name={"蔡春灵":"患者a", "陈胜球":"患者b", "彭伟洪":"患者c", "胡瑞景":"患者d", "陈善威":"患者e", "熊伟":"患者f", "文创富":"患者g", "章克亮":"患者h"}
+
+    im_snake_step = []
+    im_snake_dist = []
+    figure = plt.figure(figsize=(12,5.5))
+    
+    for im in range(len(info_list)):
+        print(info_list[im][0][0])
+        file_n_0 = info_list[im][0][0].split('/')
+        file_n_ = file_n_0[-1][:-4].split("-")
+        file_n = patient_name[file_n_[0]] + "-" + file_n_[1] + "-" + file_n_[2]
+
+
+        Img = cv2.imread(info_list[im][0][0])  # 读入原图
+        height, width, depth = Img.shape
+        Image = Img
+        image = cv2.cvtColor(Image, cv2.COLOR_BGR2GRAY)
+        img = np.array(image, dtype=np.float64)  # 读入到np的array中，并转化浮点类型
+
+        # 画初始轮廓
+        # gimg = inverse_gaussian_gradient(image, alpha=300, sigma=4.6)
+        gimg = inverse_gaussian_gradient(image, alpha=110, sigma=6)
+
+        plt.subplot(2, 4, im + 1)
+        plt.imshow(img, cmap="gray")
+        
+        color_dict = {"vessel":'b--',"sclerosis":"g--", "plaque":"y--"}
+
+        im_step = []
+        im_dist = []
+        for i in range(len(info_list[im])):
+            print(info_list[im][i][1])
+            
+            ymin, xmin, ymax, xmax = [int(info_list[im][i][2][0] * height), int(info_list[im][i][2][1] * width), int(info_list[im][i][2][2] * height), int(info_list[im][i][2][3] * width)]
+            
+            # 根据CNN预测坐标，定义椭圆方程
+            x_axis_ellipse = abs(xmax-xmin)/2
+            y_axis_ellipse = abs(ymin-ymax)/2
+            x_centre = xmin + x_axis_ellipse
+            y_centre = ymin + y_axis_ellipse
+            # 构建水平集
+            
+            
+            thresh = np.sum(image[ymin:ymax, xmin:xmax])/np.sum(image[24:1000, 18:750])
+            print("短轴半径：", x_axis_ellipse)
+            print("长轴半径：", y_axis_ellipse)
+            print("阈值：", thresh)
+            # eils = ellipse_level_set(image.shape, (y_centre, x_centre), y_axis_ellipse, x_axis_ellipse)
+
+            # Snake模型迭代输出
+            # snake, i_l, dist_l = active_contour(gaussian(img, 3), snake=init, alpha=0.8, beta=10, gamma=0.01, w_line=-2, w_edge=500, convergence=0.1)
+            # snake, i_l, dist_l = active_contour(gaussian(img, 3), snake=init, alpha=0.8, beta=19, gamma=0.01, w_line=-2, w_edge=360, convergence=0.2)
+            if control == "T":
+                eils = ellipse_level_set(image.shape, (y_centre, x_centre), y_axis_ellipse, x_axis_ellipse)
+                if float(info_list[im][i][1])==3.0:
+                    cils = circle_level_set(image.shape, (y_centre, x_centre), min(x_axis_ellipse, y_axis_ellipse))
+                    snake = morphological_geodesic_active_contour(gimg, 19, cils, threshold=thresh,smoothing=2,balloon=-1)
+                    # snake_1 = morphological_geodesic_active_contour(gimg, 18, cils, threshold=thresh,smoothing=2,balloon=1)
+                elif float(info_list[im][i][1])==2.0:
+                    snake = morphological_geodesic_active_contour(gimg, 15, eils, threshold=thresh, smoothing=2,balloon=-1)
+                    # snake_1 = morphological_geodesic_active_contour(gimg, 15, eils, threshold=thresh, smoothing=2,balloon=1)
+                elif float(info_list[im][i][1])==1.0:
+                    snake = morphological_geodesic_active_contour(gimg, 19, eils, threshold=thresh, smoothing=2,balloon=-1)
+                    # snake_1 = morphological_geodesic_active_contour(gimg, 10, eils, threshold=thresh, smoothing=2,balloon=1)
+                    
+            if control == "L":
+                eils = ellipse_level_set(image.shape, (y_centre, x_centre), y_axis_ellipse-5, x_axis_ellipse)
+                if float(info_list[im][i][1])==3.0:
+                    # snake, i_l, dist_l = active_contour(gaussian(img, 3), snake=init, alpha=0.2, beta=200, gamma=0.01, max_iterations=1200, w_line=20, w_edge=600, convergence=0.1)
+                    continue
+                elif float(info_list[im][i][1])==2.0:
+                    # eils = ellipse_level_set(image.shape, (y_centre, x_centre), y_axis_ellipse-6, x_axis_ellipse-6)
+                    snake = morphological_geodesic_active_contour(gimg, 9, eils, threshold=thresh, smoothing=2,balloon=-1)
+                    # snake_1 = morphological_geodesic_active_contour(gimg, 20, eils, threshold=thresh, smoothing=2,balloon=1)
+                elif float(info_list[im][i][1])==1.0:
+                    snake = morphological_geodesic_active_contour(gimg, 15, eils, threshold=thresh, smoothing=2,balloon=-1)
+                    # snake_1 = morphological_geodesic_active_contour(gimg, 22, eils, threshold=thresh, smoothing=2,balloon=1)
+            # print("Snake：\n", snake,"Snake shape:\n", np.array(snake).shape)
+            # 绘图显示
+            if float(info_list[im][i][1]) == 3.0:
+                color_ = "darkorchid"
+            elif float(info_list[im][i][1]) == 2.0:
+                color_ = "cyan"
+            elif float(info_list[im][i][1]) == 1.0:
+                color_ = "orangered"
+            if i == 0:
+                # plt.plot(init[:, 0], init[:, 1], 'r--', label="DLinit", lw=0.6)
+                # plt.plot(snake, color_, label="DLeSnake", lw=0.9)
+                cs = plt.contour(snake, colors=color_)
+                
+                # plt.contour(snake, [0.3], colors=color_)
+            else:
+                # plt.plot(init[:, 0], init[:, 1], 'r--', lw=0.6)
+                # plt.plot(snake[:, 0], snake[:, 1], color_, lw=0.9)
+                plt.contour(snake, colors=color_)
+            # plt.contour(eils, colors="c")        
+        
+        #画出人工分割标签
+        gt_seg = readjson(gt_segPath, file_n_0[-1])
+        print(file_n_0[-1], ":\n", gt_seg)
+        lc = 0
+        for gt_info in gt_seg["regions"]:
+            x_seg = np.array(gt_info["shape_attributes"]["all_points_x"], dtype=int) 
+            y_seg = np.array(gt_info["shape_attributes"]["all_points_y"], dtype=int) 
+            label_seg = gt_info["region_attributes"]["vasc venous"]
+            # print(label_seg)
+            if control == "T":
+                if lc == 0:
+                    plt.plot(x_seg, y_seg, color_dict[label_seg], label="GTSeg", lw=1.2)
+                else:
+                    plt.plot(x_seg, y_seg, color_dict[label_seg], lw=1.2)
+            elif control == "L":
+                if label_seg == "vessel":
+                    continue
+                else:
+                    if lc == 0:
+                        plt.plot(x_seg, y_seg, color_dict[label_seg], label="GTSeg", lw=1.2)
+                    else:
+                        plt.plot(x_seg, y_seg, color_dict[label_seg], lw=1.2)
+            lc = lc + 1
+
+        plt.xticks([]), 
+        # plt.yticks([]),
+        plt.axis("off")
+        # plt.ylabel(file_n)
+        # figure.legend(loc="upper right", fontsize=9,frameon=True,ncol=2,shadow=True)
+        # plt.tight_layout()
+        plt.subplots_adjust(wspace=0.01,hspace=0.03)
+        plt.title(file_n, fontsize=9, fontproperties=myfont)
+        # plt.title(file_n_0[-1][:-4], fontsize=9, fontproperties=myfont)
+
+        im_snake_step.append(im_step)
+        im_snake_dist.append(im_dist)
+    if control == "T":
+        plt.suptitle("IncepResNet-L_RPN-MorphSnake Transverse", fontsize=10)
+    else:
+        plt.suptitle("IncepResNet-L_RPN-MorphSnake Longitudinal", fontsize=10)
+    plt.savefig('./'+control+'_Morph_Snake.svg', format="svg")
+    
 
 
 def plt_snake_dist(step_path, dist_path):
@@ -327,17 +584,38 @@ def plt_snake_dist(step_path, dist_path):
 
 
 if __name__ == "__main__":
-    # batch detecion video slice image, general label.txt
-    
-    label_map = {1: "plaque", 2: "sclerosis", 3: "vessel"}
-    path = "./论文中_seg/Use/T"
-    threshold = 0.5
-    detecotr = TOD()
-    info_list = detecotr.get_detect_info(path, threshold)
-    print(info_list)
-    print(np.shape(info_list))
-    snake_cnn(info_list)
 
+    # 参数信息
+    #横切
+    path = "./paperSegSnake/Use/T"
+    js_path = "./paperSegSnake/via_export_json_Tv2.json"
+    # 生成DL目标识别信息
+    # threshold = 0.5
+    # detecotr = TOD()
+    # info_list = detecotr.get_detect_info(path, threshold)
+
+    # EdgeSnake分割
+    info_list = np.load("./paperSegSnake/incepResNet-L_RPN-EdgeSnake.npy")
+    # snake_cnn(info_list, js_path, control="T")
+    Morphsnake_cnn(info_list, js_path, control="T")
+
+    # 能量变化图示
     # im_snake_step_path = "/home/andy/anaconda3/ANCODE/axjingWorks/workspace/AcademicAN/TwoStage/im_snake_step.npy"
     # im_snake_dist_path = "/home/andy/anaconda3/ANCODE/axjingWorks/workspace/AcademicAN/TwoStage/im_snake_dist.npy"
     # plt_snake_dist(im_snake_step_path, im_snake_dist_path)
+
+    # 纵切
+    path_L = "./paperSegSnake/Use/L"
+    js_path_L = "./paperSegSnake/via_export_json_Lv3.json"
+    # 生成DL目标识别信息
+    # threshold = 0.5
+    # detecotr_L = TOD_L()
+    # info_list_L = detecotr_L.get_detect_info(path_L, threshold)
+    # EdgeSnake分割
+    info_list_L = np.load("./paperSegSnake/incepResNet-L_RPN-EdgeSnake_L.npy")
+    # snake_cnn(info_list_L, js_path_L, control="L")
+    Morphsnake_cnn(info_list_L, js_path_L, control="L")
+
+
+    plt.show()
+
