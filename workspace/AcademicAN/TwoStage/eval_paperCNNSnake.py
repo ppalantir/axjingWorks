@@ -11,6 +11,7 @@ from sklearn.metrics import precision_recall_curve
 import matplotlib.pyplot as plt
 from object_detection.utils import metrics
 import matplotlib as mpl
+from scipy.spatial.distance import directed_hausdorff
 from warnings import warn
 import numpy as np
 import cv2 as cv
@@ -23,6 +24,7 @@ from skimage import data
 import matplotlib.pyplot as plt
 # from snake import getCircleContour
 from skimage.segmentation.morphsnakes import morphological_geodesic_active_contour, inverse_gaussian_gradient,circle_level_set, ellipse_level_set
+import SimpleITK as sitk
 
 
 mpl.use("TKAgg")
@@ -69,6 +71,70 @@ def readjson(js_path, match_name):
         
     return gt_seg
 
+def contourCorrd_to_binaryImg(contourCorrd, img):
+    contourCorrd = np.array(contourCorrd,int)
+    w, h = img.shape
+    print("========",w, h)
+    zero_img = np.zeros_like(img)
+    for i in range(len(zero_img)):
+        for j in range(len(zero_img[i])):
+            p = cv2.pointPolygonTest(contourCorrd, (i,j), False)
+            if p == 0 or p == 1:
+                zero_img[i][j] = 1
+    return zero_img
+
+def binaryImg_to_contourCorrd(binaryImg):
+    contourCorrd_ = cv2.Sobel(binaryImg)
+    x=[], y=[]
+    for i in range(len(binaryImg)):
+        for j in range(len(binaryImg[i])):
+            if contourCorrd_[i][j] == 0:
+                x.append(i)
+                y.append(j)
+    return x,y
+
+
+def eval_dice(pre_path, gt_path):
+    pre_mat = np.load(pre_path)
+    gt_mat = np.load(gt_path)
+    intersection_set = pre_mat+gt_mat>1
+    union_set = pre_mat+gt_mat>0
+    return (2*np.sum(intersection_set==True))/(np.sum(union_set==True)+np.sum(intersection_set==True))
+
+def eval_hausdorff(pre_path, gt_path):
+    pre_mat = np.load(pre_path)
+    gt_mat = np.load(gt_path)
+    hausdorff = directed_hausdorff(pre_mat, gt_mat)
+    return hausdorff
+
+
+
+def eval_dice_hd_test(pre_dir, Gt_dir):
+    patient_name={"蔡春灵":"患者a", "陈胜球":"患者b", "彭伟洪":"患者c", "胡瑞景":"患者d", "陈善威":"患者e", "熊伟":"患者f", "文创富":"患者g", "章克亮":"患者h"}
+    eval_info = []
+    pre_file, pre_path = get_file_name_path(pre_dir, ".npy")
+    Gt_file, Gt_path = get_file_name_path(Gt_dir, ".npy")
+    
+    for pre_fp in pre_path:
+        pre_fp_ = pre_fp.split('/')
+        pre_fp_n_l = pre_fp_[-1].split("_")
+        pre_fp_n = pre_fp_n_l[-1]
+        pre_fp_l = pre_fp_n_l[1]
+        for gt_fp in Gt_path:
+            gt_fp_ = gt_fp.split('/')
+            gt_fp_n_l = gt_fp_[-1].split("_")
+            gt_fp_n = gt_fp_n_l[-1]
+            gt_fp_l = gt_fp_n_l[1]
+            if pre_fp_n == gt_fp_n and ((pre_fp_l in gt_fp_l) or (gt_fp_l in pre_fp_l)):
+                dice = eval_dice(pre_fp, gt_fp)
+                hausdorff = eval_hausdorff(pre_fp, gt_fp)
+                eval_f = [pre_fp_[-1].split(".")[0], dice, hausdorff[0]]
+                if dice > 0.1:
+                    eval_info.append(eval_f)
+    
+    return eval_info
+                
+
 
 class TOD(object):
     def __init__(self):
@@ -104,7 +170,8 @@ class TOD(object):
         # image = cv2.imread(image_path)
         # size = image.shape
 
-        jpg_file_name, jpg_file_path = get_file_name_path(image_path, format_key=".jpg")
+        jpg_file_name, jpg_file_path = get_file_name_path(
+            image_path, format_key=".jpg")
         with self.detection_graph.as_default():
             with tf.Session(graph=self.detection_graph) as sess:
                 # Expand dimensions since the model expects images to have shape: [1, None, None, 3]
@@ -112,6 +179,7 @@ class TOD(object):
                 # print(jpg_file_path)
                 info_list = []
                 for fp, i in zip(jpg_file_path, range(len(jpg_file_path))):
+
                     image = cv2.imread(fp)
                     size = np.shape(image)
                     # print(size)
@@ -150,7 +218,8 @@ class TOD(object):
                         # print(py_scores[0])
 
                         if py_scores > threshold:
-                            result_l = [fp, py_classes,py_boxes, py_scores, 1.0]
+                            result_l = [fp, py_classes,
+                                        py_boxes, py_scores, 1.0]
                             result_list.append(result_l)
                     info_list.append(result_list)
                     # else:
@@ -191,12 +260,14 @@ class TOD_L(object):
 
     def get_detect_info(self, image_path, threshold):
     
-        jpg_file_name, jpg_file_path = get_file_name_path(image_path, format_key=".jpg")
+        jpg_file_name, jpg_file_path = get_file_name_path(
+            image_path, format_key=".jpg")
         with self.detection_graph.as_default():
             with tf.Session(graph=self.detection_graph) as sess:
                 info_list = []
                 for fp, i in zip(jpg_file_path, range(len(jpg_file_path))):
                     print(fp)
+
                     image = cv2.imread(fp)
                     size = np.shape(image)
                     image_np_expanded = np.expand_dims(image, axis=0)
@@ -229,7 +300,8 @@ class TOD_L(object):
                         py_boxes = np.squeeze(boxes)[num]
                        
                         if py_scores > threshold:
-                            result_l = [fp, py_classes, py_boxes, py_scores, 1.0]
+                            result_l = [fp, py_classes,
+                                        py_boxes, py_scores, 1.0]
                             result_list.append(result_l)
                     print(result_list)
                     info_list.append(result_list)
@@ -301,34 +373,16 @@ def snake_cnn(info_list, gt_segPath, control=None):
         img = rgb2gray(img_)  # 灰度化
         seg_img = cv.Canny(img_, 150, 200)
         lalps_img = cv.Laplacian(img_, cv.CV_16S, ksize=3)
-        if file_n_[0] == "蔡春灵":
-            plt.subplot(2, 4, 1)
-        elif file_n_[0] == "陈胜球":
-            plt.subplot(2, 4, 2)
-        elif file_n_[0] == "彭伟洪":
-            plt.subplot(2, 4, 3)
-        elif file_n_[0] == "胡瑞景":
-            plt.subplot(2, 4, 4)
-        elif file_n_[0] == "陈善威":
-            plt.subplot(2, 4, 5)
-        elif file_n_[0] == "熊伟":
-            plt.subplot(2, 4, 6)
-        elif file_n_[0] == "文创富":
-        
-            plt.subplot(2, 4, 7)
-        elif file_n_[0] == "章克亮":
-            plt.subplot(2, 4, 8)
-        
+        plt.subplot(2, 4, im + 1)
         plt.imshow(img, cmap="gray")
         
         color_dict = {"vessel":'b--',"sclerosis":"g--", "plaque":"y--"}
-
-        im_step = []
-        im_dist = []
+        pc_label=[] # 控制重复区域保存路径
         for i in range(len(info_list[im])):
             print(info_list[im][i][1])
             
             ymin, xmin, ymax, xmax = [int(info_list[im][i][2][0] * height), int(info_list[im][i][2][1] * width), int(info_list[im][i][2][2] * height), int(info_list[im][i][2][3] * width)]
+            
             # 根据CNN预测坐标，定义椭圆方程
             x_axis_ellipse = abs(xmax-xmin)/2
             y_axis_ellipse = abs(ymin-ymax)/2
@@ -348,7 +402,7 @@ def snake_cnn(info_list, gt_segPath, control=None):
             # snake, i_l, dist_l = active_contour(gaussian(img, 3), snake=init, alpha=0.8, beta=19, gamma=0.01, w_line=-2, w_edge=360, convergence=0.2)
             if control == "T":
                 if float(info_list[im][i][1])==3.0:
-                    snake, i_l, dist_l = active_contour(gaussian(img, 3), snake=init, alpha=0.1, beta=10, gamma=0.01, max_iterations=1200, w_line=-1, w_edge=-600, convergence=0.1)
+                    snake, i_l, dist_l = active_contour(gaussian(img, 3), snake=init, alpha=0.1, beta=10, gamma=0.01, max_iterations=1200, w_line=0, w_edge=-600, convergence=0.1)
                 else:
                     snake, i_l, dist_l = active_contour(gaussian(img, 3), snake=init, alpha=0.1, beta=30, gamma=0.01, max_iterations=1200, w_line=-1, w_edge=360, convergence=0.1)
             if control == "L":
@@ -358,11 +412,19 @@ def snake_cnn(info_list, gt_segPath, control=None):
                 else:
                     snake, i_l, dist_l = active_contour(gaussian(img, 3), snake=init, alpha=0.1, beta=30, gamma=0.01, max_iterations=1200, w_line=-1, w_edge=360, convergence=0.1)
 
+            # print("EdgeSnake:\n", snake,"\nEdgeSnake Shape:", snake.shape)
+            contour_ = np.array([snake[:, -1], snake[:, 0]]).T
+            zero_img_pre = contourCorrd_to_binaryImg(contour_, img)
+            
+            if labelMap[float(info_list[im][i][1])] not in pc_label:
+                np.save("./eval_DLSnake/binaryImg/Pre/edgeSnake/" + control+ "/edgeSnake_" +labelMap[float(info_list[im][i][1])] +"_"+ file_n_0[-1].split(".")[0]+".npy", zero_img_pre)
+            else:
+                np.save("./eval_DLSnake/binaryImg/Pre/edgeSnake/" + control+ "/edgeSnake_" +labelMap[float(info_list[im][i][1])]*2 +"_"+ file_n_0[-1].split(".")[0]+".npy", zero_img_pre)
+                
 
-            im_step.append(i_l)
-            im_dist.append(dist_l)
-            # snake_plaque = active_contour(gaussian(img, 3), snake=init, alpha=0.8,
-            #                        beta=10, gamma=0.01, w_line=1, w_edge=500, convergence=0.1)
+            pc_label.append(labelMap[float(info_list[im][i][1])])
+
+
             # 绘图显示
             print("------------:", info_list[im][i][1])
             if float(info_list[im][i][1]) == 3.0:
@@ -377,27 +439,34 @@ def snake_cnn(info_list, gt_segPath, control=None):
             else:
                 # plt.plot(init[:, 0], init[:, 1], 'r--', lw=0.6)
                 plt.plot(snake[:, 0], snake[:, 1], color_, lw=0.9)
-            # plt.plot(init_plaque[:, 0], init_plaque[:, 1], '--r', lw=1)
-            # plt.plot(snake_plaque[:, 0], snake_plaque[:, 1], color_p[i], lw=1)
-            # font = cv2.FONT_HERSHEY_TRIPLEX
-            # cv2.rectangle(img, (xmin, ymin), (xmax, ymax), (225, 55, 55), 4)
-            # cv2.putText(img, labelMap[float(info_list[im][i][1])], (xmin+1, ymin+1), font, 1, (255, 55, 55), 1)
-            print("EdgeSnake:\n", snake,"\nEdgeSnake Shape:", snake.shape)
+
+        
         #画出人工分割标签
         print(file_n_0[-1])
         gt_seg = readjson(gt_segPath, file_n_0[-1])
         print(file_n_0[-1], ":", gt_seg)
         lc = 0
+        c_label = []
         for gt_info in gt_seg["regions"]:
             x_seg = np.array(gt_info["shape_attributes"]["all_points_x"], dtype=int) 
             y_seg = np.array(gt_info["shape_attributes"]["all_points_y"], dtype=int) 
             label_seg = gt_info["region_attributes"]["vasc venous"]
+            
+            contour_gt = np.array([y_seg, x_seg]).T
+            zero_img_gt = contourCorrd_to_binaryImg(contour_gt, img)
+            if label_seg not in c_label:
+                np.save("./eval_DLSnake/binaryImg/GT/" + control + "/edgeSnake_" + label_seg + "_" + file_n_0[-1].split(".")[0]+".npy", zero_img_gt)
+            else:
+                np.save("./eval_DLSnake/binaryImg/GT/" + control + "/edgeSnake_" + label_seg*2 + "_" + file_n_0[-1].split(".")[0]+".npy", zero_img_gt)
+
+            c_label.append(label_seg)
             print(label_seg)
             if control == "T":
                 if lc == 0:
                     plt.plot(x_seg, y_seg, color_dict[label_seg], label="GTSeg", lw=1.2)
                 else:
                     plt.plot(x_seg, y_seg, color_dict[label_seg], lw=1.2)
+               
             elif control == "L":
                 if label_seg == "vessel":
                     continue
@@ -406,6 +475,7 @@ def snake_cnn(info_list, gt_segPath, control=None):
                         plt.plot(x_seg, y_seg, color_dict[label_seg], label="GTSeg", lw=1.2)
                     else:
                         plt.plot(x_seg, y_seg, color_dict[label_seg], lw=1.2)
+                
             lc = lc + 1
         
         plt.xticks([]), 
@@ -418,16 +488,11 @@ def snake_cnn(info_list, gt_segPath, control=None):
         plt.title(file_n, fontsize=9, fontproperties=myfont)
         # plt.title(file_n_0[-1][:-4], fontsize=9, fontproperties=myfont)
 
-        im_snake_step.append(im_step)
-        im_snake_dist.append(im_dist)
     if control == "T":
         plt.suptitle("IncepResNet-L_RPN-EdgeSnake Transverse", fontsize=10)
     else:
         plt.suptitle("IncepResNet-L_RPN-EdgeSnake Longitudinal", fontsize=10)
-
-    np.save('./'+control+"_im_snake_step.npy", im_snake_step)
-    np.save('./'+control+"_im_snake_dist.npy", im_snake_dist)
-    plt.savefig('./'+control+'_edge_Snake.svg', format="svg")
+    plt.savefig('./eval_DLSnake/'+control+'_edge_Snake.svg', format="svg")
 
 def Morphsnake_cnn(info_list, gt_segPath, control=None):
     """
@@ -444,6 +509,29 @@ def Morphsnake_cnn(info_list, gt_segPath, control=None):
     
     for im in range(len(info_list)):
         print(info_list[im][0][0])
+        file_n_0 = info_list[im][0][0].split('/')
+        file_n_ = file_n_0[-1][:-4].split("-")
+        file_n = patient_name[file_n_[0]] + "-" + file_n_[1] + "-" + file_n_[2]
+
+
+        Img = cv2.imread(info_list[im][0][0])  # 读入原图
+        height, width, depth = Img.shape
+        Image = Img
+        image = cv2.cvtColor(Image, cv2.COLOR_BGR2GRAY)
+        img = np.array(image, dtype=np.float64)  # 读入到np的array中，并转化浮点类型
+
+        # 画初始轮廓
+        # gimg = inverse_gaussian_gradient(image, alpha=300, sigma=4.6)
+        gimg = inverse_gaussian_gradient(image, alpha=110, sigma=6)
+
+        plt.subplot(2, 4, im + 1)
+        plt.imshow(img, cmap="gray")
+        
+        color_dict = {"vessel":'b--',"sclerosis":"g--", "plaque":"y--"}
+
+        pc_label=[]
+        for i in range(len(info_list[im])):
+            print(info_list[im][0][0])
         file_n_0 = info_list[im][0][0].split('/')
         file_n_ = file_n_0[-1][:-4].split("-")
         file_n = patient_name[file_n_[0]] + "-" + file_n_[1] + "-" + file_n_[2]
@@ -535,7 +623,7 @@ def Morphsnake_cnn(info_list, gt_segPath, control=None):
                         eils = ellipse_level_set(image.shape, (y_centre, x_centre), y_axis_ellipse, x_axis_ellipse)
                         snake = morphological_geodesic_active_contour(gimg, 16, eils, threshold=thresh, smoothing=4,balloon=-1)
                         eils_ = ellipse_level_set(image.shape, (y_centre, x_centre), y_axis_ellipse/2, x_axis_ellipse/1.2)
-                        snake_ = morphological_geodesic_active_contour(gimg, 11, eils_, threshold=thresh, smoothing=4,balloon=1)
+                        snake_ = morphological_geodesic_active_contour(gimg, 11, eils_, threshold=thresh, smoothing=2,balloon=1)
                         snake = np.array((snake + snake_)==2, int)
                         # plt.contour(snake_, [0.9], linewidths=0.9)
                 elif float(info_list[im][i][1])==1.0:
@@ -565,7 +653,7 @@ def Morphsnake_cnn(info_list, gt_segPath, control=None):
         
         #画出人工分割标签
         gt_seg = readjson(gt_segPath, file_n_0[-1])
-        # print(file_n_0[-1], ":\n", gt_seg)
+        print(file_n_0[-1], ":\n", gt_seg)
         lc = 0
         for gt_info in gt_seg["regions"]:
             x_seg = np.array(gt_info["shape_attributes"]["all_points_x"], dtype=int) 
@@ -596,14 +684,11 @@ def Morphsnake_cnn(info_list, gt_segPath, control=None):
         plt.subplots_adjust(wspace=0.01,hspace=0.03)
         plt.title(file_n, fontsize=9, fontproperties=myfont)
         # plt.title(file_n_0[-1][:-4], fontsize=9, fontproperties=myfont)
-
-        im_snake_step.append(im_step)
-        im_snake_dist.append(im_dist)
     if control == "T":
         plt.suptitle("IncepResNet-L_RPN-MorphSnake Transverse", fontsize=10)
     else:
         plt.suptitle("IncepResNet-L_RPN-MorphSnake Longitudinal", fontsize=10)
-    plt.savefig('./'+control+'_Morph_Snake.svg', format="svg")
+    plt.savefig('./eval_DLSnake/'+control+'_Morph_Snake.svg', format="svg")
     
 
 
@@ -625,37 +710,60 @@ def plt_snake_dist(step_path, dist_path):
 
 if __name__ == "__main__":
 
-    # 参数信息
-    #横切
-    path = "./paperSegSnake/Use/T"
-    js_path = "./paperSegSnake/via_export_json_Tv2.json"
-    # 生成DL目标识别信息
-    # threshold = 0.5
-    # detecotr = TOD()
-    # info_list = detecotr.get_detect_info(path, threshold)
-
-    # EdgeSnake分割
-    info_list = np.load("./paperSegSnake/incepResNet-L_RPN-EdgeSnake.npy")
-    snake_cnn(info_list, js_path, control="T")
-    Morphsnake_cnn(info_list, js_path, control="T")
-
-    # 能量变化图示
-    # im_snake_step_path = "/home/andy/anaconda3/ANCODE/axjingWorks/workspace/AcademicAN/TwoStage/im_snake_step.npy"
-    # im_snake_dist_path = "/home/andy/anaconda3/ANCODE/axjingWorks/workspace/AcademicAN/TwoStage/im_snake_dist.npy"
-    # plt_snake_dist(im_snake_step_path, im_snake_dist_path)
-
-    # 纵切
-    path_L = "./paperSegSnake/Use/L"
-    js_path_L = "./paperSegSnake/via_export_json_Lv3.json"
+    # # 参数信息
+    # #横切
+    # path = "./paperSegSnake/Use/T"
+    # js_path = "./paperSegSnake/via_export_json_Tv2.json"
     # # 生成DL目标识别信息
-    # threshold = 0.5
-    # detecotr_L = TOD_L()
-    # info_list_L = detecotr_L.get_detect_info(path_L, threshold)
-    # EdgeSnake分割
-    info_list_L = np.load("./paperSegSnake/incepResNet-L_RPN-EdgeSnake_L.npy")
-    snake_cnn(info_list_L, js_path_L, control="L")
-    Morphsnake_cnn(info_list_L, js_path_L, control="L")
+    # # threshold = 0.5
+    # # detecotr = TOD()
+    # # info_list = detecotr.get_detect_info(path, threshold)
+
+    # # EdgeSnake分割
+    # info_list = np.load("./paperSegSnake/incepResNet-L_RPN-EdgeSnake.npy")
+    # snake_cnn(info_list, js_path, control="T")
+    # Morphsnake_cnn(info_list, js_path, control="T")
+
+    # # 能量变化图示
+    # # im_snake_step_path = "/home/andy/anaconda3/ANCODE/axjingWorks/workspace/AcademicAN/TwoStage/im_snake_step.npy"
+    # # im_snake_dist_path = "/home/andy/anaconda3/ANCODE/axjingWorks/workspace/AcademicAN/TwoStage/im_snake_dist.npy"
+    # # plt_snake_dist(im_snake_step_path, im_snake_dist_path)
+
+    # # 纵切
+    # path_L = "./paperSegSnake/Use/L"
+    # js_path_L = "./paperSegSnake/via_export_json_Lv3.json"
+    # # 生成DL目标识别信息
+    # # threshold = 0.5
+    # # detecotr_L = TOD_L()
+    # # info_list_L = detecotr_L.get_detect_info(path_L, threshold)
+    # # EdgeSnake分割
+    # info_list_L = np.load("./paperSegSnake/incepResNet-L_RPN-EdgeSnake_L.npy")
+    # snake_cnn(info_list_L, js_path_L, control="L")
+    # Morphsnake_cnn(info_list_L, js_path_L, control="L")
 
 
-    plt.show()
+    # plt.show()
 
+    # 计算dice和hd
+    gt_dir_T = "/home/andy/anaconda3/ANCODE/axjingWorks/workspace/AcademicAN/TwoStage/eval_DLSnake/binaryImg/GT/T"
+    pre_dir_T = "/home/andy/anaconda3/ANCODE/axjingWorks/workspace/AcademicAN/TwoStage/eval_DLSnake/binaryImg/Pre/edgeSnake/T"
+
+    gt_dir_L = "/home/andy/anaconda3/ANCODE/axjingWorks/workspace/AcademicAN/TwoStage/eval_DLSnake/binaryImg/GT/L"
+    pre_dir_L = "/home/andy/anaconda3/ANCODE/axjingWorks/workspace/AcademicAN/TwoStage/eval_DLSnake/binaryImg/Pre/edgeSnake/L"
+    eval_info_T = eval_dice_hd_test(pre_dir_T, gt_dir_T)
+    eval_info_L = eval_dice_hd_test(pre_dir_L, gt_dir_L)
+    print("纵切:\n",eval_info_L, "\n横切:\n", eval_info_T)
+
+    pre_dir_TM = "/home/andy/anaconda3/ANCODE/axjingWorks/workspace/AcademicAN/TwoStage/eval_DLSnake/binaryImg/Pre/morphSnake/T"
+
+    pre_dir_LM = "/home/andy/anaconda3/ANCODE/axjingWorks/workspace/AcademicAN/TwoStage/eval_DLSnake/binaryImg/Pre/morphSnake/L"
+    eval_info_TM = eval_dice_hd_test(pre_dir_TM, gt_dir_T)
+    eval_info_LM = eval_dice_hd_test(pre_dir_LM, gt_dir_L)
+    print("纵切:\n",eval_info_LM, "\n横切:\n", eval_info_TM)
+    # x = []
+    # y=[]
+    # for i in range(len(eval_info_T)):
+    #     x.append(eval_info_T[i][0].split("_")[1])
+    #     y.append(eval_info_T[i][2])
+    # plt.scatter(x, y)
+    # plt.show()
