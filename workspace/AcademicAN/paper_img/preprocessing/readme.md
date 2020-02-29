@@ -1,0 +1,1 @@
+python xml_to_csv.py -i /home/andy/anaconda3/envs/tensorflow-gpu/axingWorks/workspace/training_inception_v2_y/images/train -o /home/andy/anaconda3/envs/tensorflow-gpu/axingWorks/workspace/training_inception_v2_y/annotations/train_labels.csv

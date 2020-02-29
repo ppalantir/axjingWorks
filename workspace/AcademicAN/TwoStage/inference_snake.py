@@ -241,6 +241,7 @@ def snake_cnn(info_list):
 
         im_step = []
         im_dist = []
+        strat_i = time.time()
         for i in range(len(info_list[im])):
             ymin, xmin, ymax, xmax = [int(info_list[im][i][2][0] * height), int(
                 info_list[im][i][2][1] * width), int(info_list[im][i][2][2] * height), int(info_list[im][i][2][3] * width)]
@@ -279,6 +280,7 @@ def snake_cnn(info_list):
             # plt.plot(init_plaque[:, 0], init_plaque[:, 1], '--r', lw=1)
             # plt.plot(snake_plaque[:, 0], snake_plaque[:, 1], color_p[i], lw=1)
             plt.xticks([]), plt.yticks([]), plt.axis("off")
+        print("Snake分割图像时间：", time.time()-strat_i)
         im_snake_step.append(im_step)
         im_snake_dist.append(im_dist)
     np.save("im_snake_step.npy", im_snake_step)
@@ -311,11 +313,11 @@ if __name__ == "__main__":
     label_map = {1: "plaque", 2: "sclerosis", 3: "vessel"}
     path = "./test_tmp"
     threshold = 0.5
-    # detecotr = TOD()
-    # info_list = detecotr.get_detect_info(path, threshold)
+    detecotr = TOD()
+    info_list = detecotr.get_detect_info(path, threshold)
     # print(info_list)
     # print(np.shape(info_list))
-    # snake_cnn(info_list)
+    snake_cnn(info_list)
 
     im_snake_step_path = "/home/andy/anaconda3/ANCODE/axjingWorks/workspace/AcademicAN/TwoStage/im_snake_step.npy"
     im_snake_dist_path = "/home/andy/anaconda3/ANCODE/axjingWorks/workspace/AcademicAN/TwoStage/im_snake_dist.npy"
