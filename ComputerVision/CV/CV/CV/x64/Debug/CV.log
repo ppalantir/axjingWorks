@@ -1,0 +1,7 @@
+﻿  CV.cpp
+d:\图像处理\mfc_opencv_acm\cv\cv\cv.cpp(135): warning C4244: “初始化”: 从“double”转换到“float”，可能丢失数据
+d:\图像处理\mfc_opencv_acm\cv\cv\cv.cpp(140): warning C4244: “初始化”: 从“double”转换到“float”，可能丢失数据
+d:\图像处理\mfc_opencv_acm\cv\cv\cv.cpp(145): warning C4101: “i”: 未引用的局部变量
+d:\图像处理\mfc_opencv_acm\cv\cv\cv.cpp(164): warning C4305: “初始化”: 从“double”到“float”截断
+d:\图像处理\mfc_opencv_acm\cv\cv\cv.cpp(167): warning C4305: “初始化”: 从“double”到“float”截断
+  CV.vcxproj -> D:\图像处理\MFC_Opencv_ACM\CV\x64\Debug\CV.exe
