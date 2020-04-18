@@ -1,7 +1,7 @@
 <!--
  * @Author: axjing
  * @Date: 2019-06-03 16:37:21
- * @LastEditTime: 2020-04-18 13:37:53
+ * @LastEditTime: 2020-04-18 13:39:50
  * @LastEditors: Please set LastEditors
  * @Description: In User Settings Edit
  * @FilePath: /c:\Users\axjin\Desktop\ANCODE\axjingWorks\README.md
@@ -22,5 +22,5 @@
     * MachineLearning 手撸中......
 
 #DLML数据结构和算法汇总.md中学习目录
-<div align=center><img src="https://github.com/axjing/axjingWorks/blob/master/Reference/learnComent.png" width = "480" height = "300" /></div></center>
+<div align=center><img src="https://raw.githubusercontent.com/axjing/axjingWorks/master/Reference/learnComent.png" width = "480" height = "300" /></div></center>
 <center><font face="黑体" color=gray size=1>图</font></center>
