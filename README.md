@@ -6,7 +6,7 @@
  * @Description: In User Settings Edit
  * @FilePath: /c:\Users\axjin\Desktop\ANCODE\axjingWorks\README.md
  * @WeiXin: xiangxinweilaiAXJ
- * @ZhiHu: https://www.zhihu.com/people/3c073e64578df7441664e8e3a6d54c4b
+ * @ZhiHu: https://www.zhihu.com/people/anxjing
  -->
  *说明：*README文档中还没有分目录整理，网页中有公式的地方会出现乱码，拉取到本地使用MakeDown编译会得到解决。近期忙于毕业及找工作，后续会更新解决，方便共同学习。
 * ```axjingWorker```

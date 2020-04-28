@@ -20,6 +20,6 @@ class Solution(object):
         return None 
 
 list_orderly = [0, 1, 2, 3, 4, 5]
-target = 90
+target = 5
 S = Solution()
 print(S.binary_search(list_orderly, target))
