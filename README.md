@@ -5,10 +5,13 @@
  * @LastEditors: Please set LastEditors
  * @Description: In User Settings Edit
  * @FilePath: /c:\Users\axjin\Desktop\ANCODE\axjingWorks\README.md
- * @WeiXin: xiangxinweilaiAXJ
- * @ZhiHu: https://www.zhihu.com/people/anxjing
+ 
  -->
  *说明：*README文档中还没有分目录整理，网页中有公式的地方会出现乱码，拉取到本地使用MakeDown编译会得到解决。近期忙于毕业及找工作，后续会更新解决，方便共同学习。
+1. **@WeiXin: xiangxinweilaiAXJ**
+2. **ZhiHu: https://www.zhihu.com/people/anxjing**
+
+
 * ```axjingWorker```
 
   * 文件目录
@@ -20,10 +23,9 @@
     * DeepLearning 手撸中......
     <!-- * ComputerVision 手撸中...... -->
     * MachineLearning 手撸中......
-
 * DLML数据结构和算法汇总.md中学习目录
+[TOC]
 # 学习纲要
-
 ## 机器学习
 
 ### 监督学习
